@@ -134,7 +134,7 @@ async function loadAll(){
   const badge=document.getElementById('dbStatus');
   try{
     const [cm,ev,hi]=await Promise.all([
-      db.from('classmates').select('*').order('priezvisko'),
+      db.from('classmates').select(currentUser ? '*' : 'id,meno,priezvisko,"vydatá",stav,sedenie_rad,sedenie_miesto').order('priezvisko'),
       db.from('events').select('*').order('datum'),
       db.from('history').select('*').order('datum',{ascending:false})
     ]);
