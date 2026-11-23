@@ -176,7 +176,7 @@ async function doRegister(){
   if(error){document.getElementById('regMsg').textContent='Chyba: '+error.message;return;}
   // Zapis do classmates - vyzaduje INSERT politiku pre anon/auth v Supabase
   const e2=null;
-  document.getElementById('regMsg').textContent=e2?'Účet vytvorený, ale záznam do spolužiakov sa neuložil: '+e2.message+' - povedz adminovi, nech ťa pridá.':'Registrácia hotová. Ak Supabase vyžaduje potvrdenie emailu, potvrď ho v schránke a potom sa prihlás.';
+  document.getElementById('regMsg').textContent=e2?'Účet vytvorený, ale záznam do spolužiakov sa neuložil: '+e2.message+' - povedz adminovi, nech ťa pridá.':'Hotovo! Poslali sme ti e-mail s potvrdzovacím odkazom. Otvor ho (pozri aj do priečinka Spam), klikni na odkaz a potom sa vráť sem a prihlás sa svojím e-mailom a heslom.';
 }
 async function doForgot(){
   const email=document.getElementById('loginEmail').value.trim();
