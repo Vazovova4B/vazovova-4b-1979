@@ -63,10 +63,10 @@ input,select,textarea{width:100%;padding:10px;border:1px solid var(--line);borde
 <div class="row"><button class="btn" onclick="doLogin()">Prihlásiť sa</button><button class="btn2" onclick="doForgot()">Zabudnuté heslo - poslať reset na email</button></div>
 <p id="loginMsg" style="font-size:13px"></p>
 <h3>Registrácia nového spolužiaka</h3>
-<p style="font-size:13px;color:var(--mut)">Registrácia vytvorí účet aj záznam v tabuľke spolužiakov s rolou Štandard. Admin ti môže neskôr zmeniť rolu na Editor.</p>
-<label>Meno</label><input id="regMeno" placeholder="Juraj">
-<label>Priezvisko (za slobodna)</label><input id="regPriezvisko" placeholder="Ferianc">
-<label>Priezvisko vydatá (len u dievčat, ak máš druhé)</label><input id="regVydata" placeholder="napr. Liščáková - inak nechaj prázdne">
+<p style="font-size:13px;color:var(--mut)">Použi e-mail, na ktorý ti prišla pozvánka. Po registrácii potvrď e-mail v schránke a potom sa prihlás.</p>
+<input type="hidden" id="regMeno">
+<input type="hidden" id="regPriezvisko">
+<input type="hidden" id="regVydata">
 <label>Email</label><input id="regEmail" type="email" placeholder="tvoj@email.sk">
 <label>Heslo (min. 6 znakov)</label><input id="regPass" type="password">
 <div class="row"><button class="btn" onclick="doRegister()">Registrovať sa</button></div>
@@ -133,12 +133,13 @@ async function loadAll(){
   if(!db) return;
   const badge=document.getElementById('dbStatus');
   try{
-    const [cm,ev,hi]=await Promise.all([
-      db.from('classmates').select(currentUser ? '*' : 'id,meno,priezvisko,"vydatá",stav,sedenie_rad,sedenie_miesto').order('priezvisko'),
+    const [kt,cm,ev,hi]=await Promise.all([ (currentUser?db.rpc('kontakty'):Promise.resolve({data:[],error:null})),
+      db.from('classmates').select(currentUser ? 'id,meno,priezvisko,"vydatá",stav,sedenie_rad,sedenie_miesto,zaluby' : 'id,meno,priezvisko,"vydatá",stav,sedenie_rad,sedenie_miesto').order('priezvisko'),
       db.from('events').select('*').order('datum'),
       db.from('history').select('*').order('datum',{ascending:false})
     ]);
-    if(cm.error) throw cm.error; if(ev.error) throw ev.error; if(hi.error) throw hi.error;
+    if(cm.error) throw cm.error; if(kt.error) throw kt.error; if(ev.error) throw ev.error; if(hi.error) throw hi.error;
+    const K={}; (kt.data||[]).forEach(k=>{K[k.id]=k;}); cm.data=cm.data.map(r=>Object.assign({},r,K[r.id]||{}));
     CLASSMATES=cm.data.map(r=>({id:r.id,meno:r.meno,priezvisko:r.priezvisko,'vydatá':r['vydatá']||'',dob:r.datum_narodenia||'',email:r.email||'',tel:r.telefon||'',wa:r.whatsapp||'',fb:r.facebook||'',stav:r.stav||'živý',sedenie:(r.sedenie_rad?r.sedenie_rad+'. rad, miesto '+(r.sedenie_miesto||''):''),opravnenie:r.opravnenie||'Štandard',zaluby:r.zaluby||'',privacy_email:r.privacy_email,privacy_telefon:r.privacy_telefon}));
     EVENTS=ev.data||[]; HISTORY=hi.data||[];
     document.getElementById('countClass').textContent=CLASSMATES.length;
@@ -151,8 +152,8 @@ async function refreshAuth(){
   const {data}=await db.auth.getSession(); currentUser=data.session?.user||null;
   myProfile=null; myRole='navstevnik';
   if(currentUser){
-    const {data:prof}=await db.from('classmates').select('*').eq('email',currentUser.email).maybeSingle();
-    myProfile=prof||null; myRole=prof?.opravnenie||'Štandard';
+    const {data:kk}=await db.rpc('kontakty'); const em=(currentUser.email||'').toLowerCase(); const mine=(kk||[]).find(k=>(k.email||'').toLowerCase()===em||(k.email2||'').toLowerCase()===em); let prof=null; if(mine){const {data:pp}=await db.from('classmates').select('id,meno,priezvisko').eq('id',mine.id).maybeSingle(); prof=pp?Object.assign({},pp,{opravnenie:mine.opravnenie}):null;}
+    myProfile=prof||null; myRole=prof?(prof.opravnenie||'Štandard'):'navstevnik';
     document.getElementById('authBox').textContent='Prihlásený: '+(prof?prof.meno+' '+prof.priezvisko:currentUser.email)+' • Rola: '+myRole;
     document.getElementById('logoutBtn').classList.remove('hidden');
     if(myRole==='Admin'||myRole==='Editor'){document.getElementById('eventForm').classList.remove('hidden');document.getElementById('historyForm').classList.remove('hidden');}
@@ -170,11 +171,11 @@ async function doLogin(){
 }
 async function doRegister(){
   const meno=document.getElementById('regMeno').value.trim(), priezvisko=document.getElementById('regPriezvisko').value.trim(), vydata=document.getElementById('regVydata').value.trim(), email=document.getElementById('regEmail').value.trim(), pass=document.getElementById('regPass').value;
-  if(!meno||!priezvisko||!email||pass.length<6){document.getElementById('regMsg').textContent='Vyplň meno, priezvisko, email a heslo min. 6 znakov.';return;}
+  if(!email||pass.length<6){document.getElementById('regMsg').textContent='Vyplň email a heslo min. 6 znakov.';return;}
   const {data,error}=await db.auth.signUp({email,password:pass});
   if(error){document.getElementById('regMsg').textContent='Chyba: '+error.message;return;}
   // Zapis do classmates - vyzaduje INSERT politiku pre anon/auth v Supabase
-  const {error:e2}=await db.from('classmates').insert([{meno,priezvisko,'vydatá':vydata||null,email,stav:'živý',opravnenie:'Štandard'}]);
+  const e2=null;
   document.getElementById('regMsg').textContent=e2?'Účet vytvorený, ale záznam do spolužiakov sa neuložil: '+e2.message+' - povedz adminovi, nech ťa pridá.':'Registrácia hotová. Ak Supabase vyžaduje potvrdenie emailu, potvrď ho v schránke a potom sa prihlás.';
 }
 async function doForgot(){
