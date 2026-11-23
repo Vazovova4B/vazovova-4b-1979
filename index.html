@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="sk"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Gymnázium Vazovova 4.B 1979 - Spolužiaci</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root{--bg:#FAF8F4;--card:#fff;--sage:#8FA98F;--sage-d:#6E8A6E;--sand:#D9C7A7;--line:#E8E2D8;--txt:#2E2E2C;--mut:#6E6A63}
+*{box-sizing:border-box}body{margin:0;font-family:Inter,system-ui;background:var(--bg);color:var(--txt)}
+body::before{content:"";position:fixed;inset:0;background:url('trieda.png') center top/cover no-repeat;opacity:1;z-index:-2}
+header{position:sticky;top:0;background:rgba(255,255,255,.82);backdrop-filter:blur(10px);border-bottom:1px solid var(--line);z-index:10}
+.wrap{max-width:1080px;margin:0 auto;padding:0 16px}
+.nav{display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:12px 0}
+.logo{font-family:'Playfair Display',serif;font-size:22px;font-weight:700;line-height:1.1}
+.logo small{display:block;font-family:Inter;font-size:11px;letter-spacing:.15em;color:var(--mut)}
+.nav button{border:1px solid var(--line);background:#fff;padding:8px 12px;border-radius:999px;cursor:pointer;font-weight:600}
+.nav button.active{background:var(--sage);color:#fff;border-color:var(--sage)}
+.card{background:#fff;border:1px solid var(--line);border-radius:16px;padding:18px;margin:14px 0;box-shadow:0 4px 18px rgba(0,0,0,.06)}
+h1{font-family:'Playfair Display',serif;font-size:44px;margin:6px 0}h2{font-family:'Playfair Display',serif;margin:0 0 10px}h3{margin:14px 0 8px}
+.btn{background:var(--sage);color:#fff;border:0;padding:11px 16px;border-radius:999px;font-weight:700;cursor:pointer}
+.btn2{background:#fff;border:1px solid var(--line);padding:10px 14px;border-radius:999px;cursor:pointer;font-weight:600}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px}
+.seat{border:1px solid var(--line);border-radius:12px;padding:10px;background:#FFFEFB;cursor:pointer}
+.seat.dead{background:#E5E5E5;filter:grayscale(1)} .ribbon{background:#111;color:#fff;font-size:11px;padding:2px 6px;border-radius:6px;display:inline-block}
+table{width:100%;border-collapse:collapse}th,td{padding:9px 8px;border-bottom:1px solid var(--line);text-align:left;font-size:14px}
+input,select,textarea{width:100%;padding:10px;border:1px solid var(--line);border-radius:10px;margin:6px 0;font-family:Inter}
+.badge{display:inline-block;background:#EEF2EC;border:1px solid var(--line);padding:3px 8px;border-radius:999px;font-size:12px}
+.row{display:flex;gap:8px;flex-wrap:wrap}.hidden{display:none}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.45);display:flex;align-items:flex-start;justify-content:center;z-index:40;padding:20px;overflow:auto}
+.modal>div{background:#fff;border-radius:16px;max-width:680px;width:100%;padding:18px;position:relative}
+.x{position:absolute;right:12px;top:10px;font-size:24px;cursor:pointer;border:0;background:transparent}
+@media(max-width:640px){h1{font-size:32px}}
+</style></head>
+<body>
+<header><div class="wrap nav"><div class="logo">Gymnázium Vazovova<small>4.B • MATURITA 1979 • BRATISLAVA</small></div>
+<span style="flex:1"></span>
+<button onclick="show('domov')" class="active" data-nav="domov">Domov</button>
+<button onclick="show('stretnutia')" data-nav="stretnutia">Stretnutia</button>
+<button onclick="show('galeria')" data-nav="galeria">Galéria</button>
+<button onclick="show('trieda')" data-nav="trieda">Naša trieda</button>
+<button onclick="show('tabulka')" data-nav="tabulka">Tabuľka spolužiakov</button>
+<button onclick="show('historia')" data-nav="historia">História</button>
+<button onclick="show('nahrat')" data-nav="nahrat">Nahrať fotky</button>
+<button onclick="show('odkazy')" data-nav="odkazy">Odkazy</button>
+</div>
+<div class="wrap" style="padding-bottom:10px;display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+<span id="authBox" class="badge">Neprihlásený - vidíš len aktivity a mená</span>
+<button class="btn2" style="width:auto" onclick="show('login')">Prihlásiť / Registrovať</button>
+<button class="btn2 hidden" style="width:auto" id="logoutBtn" onclick="doLogout()">Odhlásiť sa</button>
+</div></header>
+<main class="wrap">
+<section id="domov">
+<div class="card"><div class="badge">47 ROKOV OD MATURITY A STÁLE SPOLU</div><p id="dbStatus" style="font-size:13px;color:var(--mut)">Načítavam zo Supabase...</p>
+<h1>4.B — Vazovova<br><span style="color:var(--sage)">1979</span></h1>
+<p>Digitálny triedny album pre spolužiakov, ktorí sa stále stretávajú. Spomienky, fotografie, plány a všetky cesty späť k sebe.</p>
+<div class="row"><button class="btn" onclick="show('stretnutia')">Pozrieť stretnutia →</button><button class="btn2" onclick="show('trieda')">Nájsť spolužiaka</button></div>
+<p><b id="countClass">37</b> spolužiakov &nbsp;•&nbsp; <b>10</b> učiteľov &nbsp;•&nbsp; <b>348+</b> fotiek v archíve</p></div>
+<div class="card"><h2>Najbližšie stretnutie</h2><div id="nextEvent">Načítavam...</div></div>
+<div class="card"><h2>Posledné fotky</h2><p style="font-size:13px;color:var(--mut)">Fotky sú v Google Drive.</p><div class="grid" id="lastPhotos"></div></div>
+</section>
+<section id="login" class="hidden"><div class="card"><h2>Prihlásenie</h2>
+<label>Email</label><input id="loginEmail" type="email" placeholder="tvoj@email.sk">
+<label>Heslo</label><input id="loginPass" type="password" placeholder="Heslo">
+<div class="row"><button class="btn" onclick="doLogin()">Prihlásiť sa</button><button class="btn2" onclick="doForgot()">Zabudnuté heslo - poslať reset na email</button></div>
+<p id="loginMsg" style="font-size:13px"></p>
+<h3>Registrácia nového spolužiaka</h3>
+<p style="font-size:13px;color:var(--mut)">Registrácia vytvorí účet aj záznam v tabuľke spolužiakov s rolou Štandard. Admin ti môže neskôr zmeniť rolu na Editor.</p>
+<label>Meno</label><input id="regMeno" placeholder="Juraj">
+<label>Priezvisko (za slobodna)</label><input id="regPriezvisko" placeholder="Ferianc">
+<label>Priezvisko vydatá (len u dievčat, ak máš druhé)</label><input id="regVydata" placeholder="napr. Liščáková - inak nechaj prázdne">
+<label>Email</label><input id="regEmail" type="email" placeholder="tvoj@email.sk">
+<label>Heslo (min. 6 znakov)</label><input id="regPass" type="password">
+<div class="row"><button class="btn" onclick="doRegister()">Registrovať sa</button></div>
+<p id="regMsg" style="font-size:13px"></p></div></section>
+<section id="stretnutia" class="hidden"><div class="card"><h2>Stretnutia</h2><div id="eventsList">Načítavam...</div>
+<div id="eventForm" class="hidden"><h3>Nové stretnutie (Editor / Admin)</h3>
+<label>Dátum</label><input type="date" id="evDate"><label>Čas (24h)</label><input type="time" id="evTime" value="17:00">
+<label>Miesto / GPS - napr. 48.1486, 17.1077 alebo Leberfinger, Bratislava</label><input id="evPlace">
+<label>Popis</label><textarea id="evDesc"></textarea>
+<div class="row"><button class="btn" onclick="saveEvent()">Uložiť stretnutie</button><button class="btn2" onclick="openMaps()">Pozrieť v Google mapách</button><button class="btn2" onclick="openMail()">Poslať pozvánku mailom všetkým</button></div></div></div></section>
+<section id="galeria" class="hidden"><div class="card"><h2>Galéria - Google Drive</h2>
+<p>Náš archív: 15 GB na Google Drive</p>
+<div class="row"><a class="btn" style="text-decoration:none" href="https://drive.google.com/drive/folders/1n7DXaUsYBZVba99rD4LtKKbbnZLWC61h" target="_blank" rel="noopener">Otvoriť hlavný archív v Google Drive</a>
+<a class="btn2" style="text-decoration:none" href="https://drive.google.com/drive/folders/1Elwg5xzr0gGvwvpMRYvMCuz1puSyxHX0" target="_blank" rel="noopener">Otvoriť album 13.11.2026</a></div>
+<h3>Album: Stretávka 13.11.2026</h3><div class="grid" id="gallery"></div></div></section>
+<section id="trieda" class="hidden"><div class="card"><h2>Naša trieda</h2>
+<p><b>Virtuálna trieda:</b> vidíš, kto kde sedel. Klikni na postavu, otvorí sa profil.</p>
+<input id="searchSeat" placeholder="Hľadaj meno" oninput="renderSeats()"><div id="virtual"></div>
+<h3>Tabuľkový zasadací poriadok</h3><div id="seatsTable"></div>
+<h3>Učitelia</h3><div id="teachers"></div></div></section>
+<section id="tabulka" class="hidden"><div class="card"><h2>Tabuľka spolužiakov</h2><p id="tableNote"></p><input placeholder="Hľadaj meno..." oninput="renderTable(this.value)"><div style="overflow:auto"><table><thead><tr><th>Meno</th><th>Priezvisko</th><th>Vydatá</th><th>Stav</th><th>Sedenie</th><th>Kontakt</th></tr></thead><tbody id="tbody"></tbody></table></div></div></section>
+<section id="historia" class="hidden"><div class="card"><h2>História</h2><div id="historyList">Načítavam...</div>
+<div id="historyForm" class="hidden"><h3>Pridať minulú akciu (Editor / Admin)</h3><label>Dátum</label><input type="date" id="hDate"><label>Miesto</label><input id="hPlace"><label>Popis</label><textarea id="hDesc"></textarea><button class="btn" onclick="addHistory()">Pridať</button></div></div></section>
+<section id="nahrat" class="hidden"><div class="card"><h2>Nahrať fotky</h2><p>Pre dôchodcov - jednoducho: stlač, vyber fotky, ulož.</p>
+<label class="btn" style="display:inline-block;text-align:center">📷 NAHRAŤ FOTKY Z MOBILU<input type="file" id="fileInput" accept="image/*" multiple style="display:none" onchange="previewFiles(this)"></label>
+<div class="grid" id="preview"></div><p style="font-size:13px">Fotka sa uloží ako záznam do Supabase (odkaz). Samotné súbory ostávajú v Google Drive - po výbere fotiek ich nahraj aj do Drive priečinka 13.11.2026 a sem vlož odkaz.</p>
+<label>Odkaz na fotku v Drive / popis</label><input id="photoUrl" placeholder="Drive odkaz alebo popis"><button class="btn" onclick="savePhoto()">Uložiť odkaz na fotku</button></div></section>
+<section id="odkazy" class="hidden"><div class="card"><h2>Odkazy</h2><p>Zosnulí - <i>už nežije</i> - sa automaticky nezobrazujú v príjemcoch.</p>
+<div class="row"><a class="btn2" style="text-decoration:none" href="https://facebook.com" target="_blank" rel="noopener">Facebook</a><a class="btn2" style="text-decoration:none" href="https://instagram.com" target="_blank" rel="noopener">Instagram</a><a class="btn2" style="text-decoration:none" href="https://youtube.com" target="_blank" rel="noopener">YouTube</a><a class="btn2" style="text-decoration:none" href="https://whatsapp.com" target="_blank" rel="noopener">WhatsApp</a></div>
+<h3>Napísať odkaz</h3><div id="recipients" style="max-height:180px;overflow:auto;border:1px solid var(--line);border-radius:12px;padding:10px"></div>
+<div class="row"><button class="btn2" onclick="selectAll(true)">Vybrať všetkých</button><button class="btn2" onclick="selectAll(false)">Zrušiť výber</button></div>
+<label>Predmet</label><input id="msgSubject" placeholder="Predmet"><label>Text správy</label><textarea id="msgBody" rows="4"></textarea>
+<div class="row"><button class="btn" onclick="sendMsg()">Odoslať (uloží sa do Supabase)</button><button class="btn2" onclick="show('domov')">Zrušiť / Zavrieť</button><button class="btn2" onclick="openMail()">Hromadný mail všetkým</button></div><div id="msgList"></div></div></section>
+</main>
+<div id="modalRoot"></div><div id="lightboxRoot"></div>
+<script>
+// ===== SUPABASE - BEZ KLUCOV V SUBORE =====
+// Kluce NIE SU v tomto subore ani v GitHub-e.
+// Su len v Cloudflare -> Pages -> Settings -> Environment variables: SUPABASE_URL, SUPABASE_ANON_KEY
+// Stranka si ich vypyta z /api/config (functions/api/config.js), ktory ich cita z Cloudflare.
+// NIKDY sem nedavaj ziadny kluc natvrdo.
+let supabase = null;
+async function initSupabase(){
+  const badge = document.getElementById('dbStatus');
+  try{
+    const r = await fetch('/api/config');
+    if(!r.ok) throw new Error('config endpoint: '+r.status+' - skontroluj, ci existuje functions/api/config.js a ci si nasadil Pages s Functions');
+    const cfg = await r.json();
+    if(!cfg.url || !cfg.anonKey) throw new Error('Cloudflare env SUPABASE_URL / SUPABASE_ANON_KEY nie su nastavene v Pages Settings');
+    supabase = window.supabase.createClient(cfg.url, cfg.anonKey);
+    supabase.auth.onAuthStateChange(()=>{refreshAuth();});
+    await refreshAuth(); await loadAll();
+  }catch(e){
+    if(badge) badge.textContent = 'Nepodarilo sa načítať konfiguráciu: '+e.message;
+    console.warn(e);
+  }
+}
+let CLASSMATES=[], EVENTS=[], HISTORY=[];
+let currentUser=null, myProfile=null, myRole='navstevnik';
+function show(id){document.querySelectorAll('main section').forEach(s=>s.classList.add('hidden'));document.getElementById(id).classList.remove('hidden');document.querySelectorAll('[data-nav]').forEach(b=>b.classList.toggle('active',b.getAttribute('data-nav')===id));}
+function fmtDate(d){if(!d)return'';const x=new Date(d+'T00:00:00');return String(x.getDate()).padStart(2,'0')+'.'+String(x.getMonth()+1).padStart(2,'0')+'.'+x.getFullYear();}
+function isDead(c){return c.stav==='už nežije';}
+async function loadAll(){
+  if(!supabase) return;
+  const badge=document.getElementById('dbStatus');
+  try{
+    const [cm,ev,hi]=await Promise.all([
+      supabase.from('classmates').select('*').order('priezvisko'),
+      supabase.from('events').select('*').order('datum'),
+      supabase.from('history').select('*').order('datum',{ascending:false})
+    ]);
+    if(cm.error) throw cm.error; if(ev.error) throw ev.error; if(hi.error) throw hi.error;
+    CLASSMATES=cm.data.map(r=>({id:r.id,meno:r.meno,priezvisko:r.priezvisko,'vydatá':r['vydatá']||'',dob:r.datum_narodenia||'',email:r.email||'',tel:r.telefon||'',wa:r.whatsapp||'',fb:r.facebook||'',stav:r.stav||'živý',sedenie:(r.sedenie_rad?r.sedenie_rad+'. rad, miesto '+(r.sedenie_miesto||''):''),opravnenie:r.opravnenie||'Štandard',zaluby:r.zaluby||'',privacy_email:r.privacy_email,privacy_telefon:r.privacy_telefon}));
+    EVENTS=ev.data||[]; HISTORY=hi.data||[];
+    document.getElementById('countClass').textContent=CLASSMATES.length;
+    if(badge) badge.textContent='Načítané zo Supabase: '+CLASSMATES.length+' spolužiakov';
+    renderEvents(); renderHistory(); renderSeats(); renderTable(); renderPhotos(); renderRecipients();
+  }catch(e){ if(badge) badge.textContent='Nepodarilo sa načítať Supabase: '+e.message+' - skontroluj SUPABASE_URL a SUPABASE_ANON_KEY a RLS politiky'; }
+}
+async function refreshAuth(){
+  if(!supabase) return;
+  const {data}=await supabase.auth.getSession(); currentUser=data.session?.user||null;
+  myProfile=null; myRole='navstevnik';
+  if(currentUser){
+    const {data:prof}=await supabase.from('classmates').select('*').eq('email',currentUser.email).maybeSingle();
+    myProfile=prof||null; myRole=prof?.opravnenie||'Štandard';
+    document.getElementById('authBox').textContent='Prihlásený: '+(prof?prof.meno+' '+prof.priezvisko:currentUser.email)+' • Rola: '+myRole;
+    document.getElementById('logoutBtn').classList.remove('hidden');
+    if(myRole==='Admin'||myRole==='Editor'){document.getElementById('eventForm').classList.remove('hidden');document.getElementById('historyForm').classList.remove('hidden');}
+  } else {
+    document.getElementById('authBox').textContent='Neprihlásený - vidíš len aktivity a mená';
+    document.getElementById('logoutBtn').classList.add('hidden');
+  }
+  renderTable(); renderSeats();
+}
+async function doLogin(){
+  const email=document.getElementById('loginEmail').value.trim(), pass=document.getElementById('loginPass').value;
+  const {error}=await supabase.auth.signInWithPassword({email,password:pass});
+  document.getElementById('loginMsg').textContent=error?'Chyba: '+error.message:'Prihlásenie úspešné.';
+  if(!error){await refreshAuth(); await loadAll(); show('domov');}
+}
+async function doRegister(){
+  const meno=document.getElementById('regMeno').value.trim(), priezvisko=document.getElementById('regPriezvisko').value.trim(), vydata=document.getElementById('regVydata').value.trim(), email=document.getElementById('regEmail').value.trim(), pass=document.getElementById('regPass').value;
+  if(!meno||!priezvisko||!email||pass.length<6){document.getElementById('regMsg').textContent='Vyplň meno, priezvisko, email a heslo min. 6 znakov.';return;}
+  const {data,error}=await supabase.auth.signUp({email,password:pass});
+  if(error){document.getElementById('regMsg').textContent='Chyba: '+error.message;return;}
+  // Zapis do classmates - vyzaduje INSERT politiku pre anon/auth v Supabase
+  const {error:e2}=await supabase.from('classmates').insert([{meno,priezvisko,'vydatá':vydata||null,email,stav:'živý',opravnenie:'Štandard'}]);
+  document.getElementById('regMsg').textContent=e2?'Účet vytvorený, ale záznam do spolužiakov sa neuložil: '+e2.message+' - povedz adminovi, nech ťa pridá.':'Registrácia hotová. Ak Supabase vyžaduje potvrdenie emailu, potvrď ho v schránke a potom sa prihlás.';
+}
+async function doForgot(){
+  const email=document.getElementById('loginEmail').value.trim();
+  if(!email){document.getElementById('loginMsg').textContent='Najprv napíš email.';return;}
+  const {error}=await supabase.auth.resetPasswordForEmail(email,{redirectTo:location.href});
+  document.getElementById('loginMsg').textContent=error?'Chyba: '+error.message:'Reset odkaz poslaný na email.';
+}
+async function doLogout(){await supabase.auth.signOut(); await refreshAuth(); show('domov');}
+function renderEvents(){
+  const el=document.getElementById('eventsList'); if(!EVENTS.length){el.innerHTML='Zatiaľ žiadne stretnutia.';return;}
+  const future=EVENTS.filter(e=>new Date(e.datum)>=new Date(new Date().toISOString().slice(0,10)));
+  const next=future[0]||EVENTS[EVENTS.length-1];
+  document.getElementById('nextEvent').innerHTML='<b>'+fmtDate(next.datum)+'</b> o <b>'+(next.cas||'17:00').slice(0,5)+'</b> • '+(next.miesto||'')+' • '+(next.popis||'')+'<div class="row" style="margin-top:8px"><button class="btn" onclick="openMail()">Potvrdiť účasť</button></div>';
+  el.innerHTML=EVENTS.map(e=>'<div class="card"><b>'+fmtDate(e.datum)+'</b> o '+(e.cas||'').slice(0,5)+' • '+e.miesto+'<p>'+(e.popis||'')+'</p>'+(e.gps?'<button class="btn2" onclick="window.open(\'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(e.gps)+'\',\'_blank\')">Pozrieť v mapách / Kopírovať GPS</button>':'')+'</div>').join('');
+}
+function renderHistory(){document.getElementById('historyList').innerHTML=HISTORY.length?HISTORY.map(h=>'<div class="card"><b>'+fmtDate(h.datum)+'</b> • '+(h.miesto||'')+'<p>'+(h.popis||'')+'</p></div>').join(''):'Zatiaľ žiadna história.';}
+async function saveEvent(){
+  if(!(myRole==='Admin'||myRole==='Editor')){alert('Len Editor / Admin.');return;}
+  const d=document.getElementById('evDate').value,t=document.getElementById('evTime').value,p=document.getElementById('evPlace').value,desc=document.getElementById('evDesc').value;
+  if(!d||!p){alert('Vyplň dátum a miesto.');return;}
+  const {error}=await supabase.from('events').insert([{datum:d,cas:t||'17:00',miesto:p,gps:p,popis:desc}]);
+  if(error) alert('Chyba: '+error.message); else {alert('Stretnutie uložené.'); await loadAll();}
+}
+async function addHistory(){
+  if(!(myRole==='Admin'||myRole==='Editor')){alert('Len Editor / Admin.');return;}
+  const d=document.getElementById('hDate').value,p=document.getElementById('hPlace').value,desc=document.getElementById('hDesc').value;
+  const {error}=await supabase.from('history').insert([{datum:d,miesto:p,popis:desc}]);
+  if(error) alert('Chyba: '+error.message); else {alert('História pridaná.'); await loadAll();}
+}
+function canSeeContact(c){return myRole!=='navstevnik';}
+function openProfile(c){
+  if(myRole==='navstevnik'){alert('Pre zobrazenie fotiek a profilov sa prosím prihláste.');return;}
+  const dead=isDead(c);
+  const canEdit=myRole==='Admin'||(myProfile&&myProfile.id===c.id);
+  document.getElementById('modalRoot').innerHTML='<div class="modal" onclick="if(event.target===this)closeModal()"><div><button class="x" onclick="closeModal()">×</button><h2>'+c.meno+' '+c.priezvisko+(dead?' <span class="ribbon">† Spomíname - už nežije</span>':'')+'</h2><p><b>Vydatá:</b> '+(c['vydatá']||'-')+'</p><p><b>Sedel/a:</b> '+(c.sedenie||'-')+'</p><p><b>Stav:</b> '+c.stav+'</p>'+(canSeeContact(c)?'<p><b>Email:</b> '+(c.email||'-')+'</p><p><b>Telefón:</b> '+(c.tel||'-')+'</p><p><b>Záľuby:</b> '+(c.zaluby||'-')+'</p>':'<p>Kontakty vidí len prihlásený spolužiak.</p>')+(canEdit?'<div style="border:1px solid #E8E2D8;border-radius:12px;padding:12px"><h3>Upraviť profil</h3><label>Stav</label><select id="editStav"><option value="živý" '+(c.stav==='živý'?'selected':'')+'>Živý</option><option value="už nežije" '+(isDead(c)?'selected':'')+'>Už nežije</option></select><label>Záľuby</label><input id="editZaluby" value="'+(c.zaluby||'')+'"><label>Telefón</label><input id="editTel" value="'+(c.tel||'')+'"><button class="btn" onclick="saveProfile(\''+c.id+'\')">Uložiť</button></div>':'')+'</div></div>';
+}
+function closeModal(){document.getElementById('modalRoot').innerHTML='';}
+async function saveProfile(id){
+  const stav=document.getElementById('editStav').value, zaluby=document.getElementById('editZaluby').value, tel=document.getElementById('editTel').value;
+  const {error}=await supabase.from('classmates').update({stav,zaluby,telefon:tel}).eq('id',id);
+  if(error) alert('Chyba: '+error.message); else {alert('Uložené.'); closeModal(); await loadAll();}
+}
+function renderSeats(){
+  const q=(document.getElementById('searchSeat')?.value||'').toLowerCase();
+  const v=document.getElementById('virtual'); if(!v) return;
+  let html='<p style="font-size:13px">Tabuľa je vpredu. Klikni na postavu.</p><div class="grid">';
+  CLASSMATES.forEach(c=>{const hl=(c.meno+' '+c.priezvisko).toLowerCase().includes(q)&&q; html+='<div class="seat '+(isDead(c)?'dead':'')+'" style="'+(hl?'outline:3px solid var(--sage)':'')+'" onclick="openProfileByName(\''+c.meno+' '+c.priezvisko+'\')">'+(isDead(c)?'<span class="ribbon">† Spomíname</span><br>':'')+'<b>'+c.meno+' '+c.priezvisko+'</b><br><span style="font-size:12px">'+(c.sedenie||'')+'</span></div>';});
+  html+='</div>'; v.innerHTML=html;
+  document.getElementById('seatsTable').innerHTML='<div class="grid">'+CLASSMATES.map(c=>'<div class="seat '+(isDead(c)?'dead':'')+'">'+c.sedenie+' - '+c.meno+' '+c.priezvisko+'</div>').join('')+'</div>';
+  document.getElementById('teachers').innerHTML=['Gruniková - učiteľka','Tarajová Skladanová - učiteľka','Eva Králová - učiteľka'].map(x=>'<span class="badge">'+x+'</span>').join(' ');
+}
+function openProfileByName(n){const c=CLASSMATES.find(x=>x.meno+' '+x.priezvisko===n); if(c) openProfile(c);}
+function renderTable(q=''){
+  const rows=CLASSMATES.filter(c=>(c.meno+' '+c.priezvisko).toLowerCase().includes(q.toLowerCase()));
+  document.getElementById('tbody').innerHTML=rows.map(c=>'<tr style="'+(isDead(c)?'background:#F0F0F0':'')+'"><td>'+c.meno+'</td><td>'+c.priezvisko+(isDead(c)?' †':'')+'</td><td>'+(c['vydatá']||'')+'</td><td>'+c.stav+'</td><td>'+(c.sedenie||'')+'</td><td>'+(canSeeContact(c)?(c.email||'-'):'len pre prihlásených')+'</td></tr>').join('');
+  document.getElementById('tableNote').textContent=myRole==='navstevnik'?'Neprihlásený: vidíš len mená a sedenie, bez kontaktov a fotiek.':'Prihlásený: vidíš kontakty.';
+}
+function renderPhotos(){
+  const imgs=['https://images.unsplash.com/photo-1529156069898-49953e39b3ac?w=600','https://images.unsplash.com/photo-1511632765486-a01980e01a18?w=600'];
+  document.getElementById('lastPhotos').innerHTML=imgs.map(u=>'<img src="'+u+'" style="width:100%;border-radius:12px">').join('');
+  document.getElementById('gallery').innerHTML=imgs.map(u=>'<img src="'+u+'" style="width:100%;border-radius:12px">').join('');
+}
+function renderRecipients(){
+  document.getElementById('recipients').innerHTML=CLASSMATES.filter(c=>!isDead(c)).map(c=>'<label style="display:block"><input type="checkbox" class="rec" value="'+c.email+'"> '+c.meno+' '+c.priezvisko+'</label>').join('');
+}
+function selectAll(v){document.querySelectorAll('.rec').forEach(c=>c.checked=v);}
+async function sendMsg(){
+  if(myRole==='navstevnik'){alert('Odkaz môže poslať len prihlásený.');return;}
+  const subj=document.getElementById('msgSubject').value, body=document.getElementById('msgBody').value;
+  const to=[...document.querySelectorAll('.rec:checked')].map(x=>x.value).join(', ');
+  const {error}=await supabase.from('messages').insert([{komu:to,predmet:subj,telo:body,odosielatel:currentUser?.email||''}]);
+  if(error) alert('Chyba: '+error.message); else {alert('Odoslané a uložené.'); document.getElementById('msgList').innerHTML+='<div class="card"><b>'+(subj||'Bez predmetu')+'</b><p>'+body+'</p></div>';}
+}
+function openMail(){const to=CLASSMATES.filter(c=>!isDead(c)&&c.email).map(c=>c.email).join(','); const subj=encodeURIComponent('Pozvánka: Stretnutie 4.B Vazovova 1979'); const body=encodeURIComponent('Milí spolužiaci,\n\nsrdečne vás pozývame na stretnutie 4.B - 20.06.2027 o 17:00, Reštaurácia Leberfinger, Bratislava.\n\nTešíme sa na vás!\n4.B Vazovova 1979'); window.location.href='mailto:?bcc='+encodeURIComponent(to)+'&subject='+subj+'&body='+body;}
+function openMaps(){const q=document.getElementById('evPlace')?.value||'Leberfinger, Bratislava'; window.open('https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(q),'_blank');}
+function previewFiles(inp){const p=document.getElementById('preview'); p.innerHTML=''; [...inp.files].forEach(f=>{const r=new FileReader(); r.onload=e=>{p.innerHTML+='<div><img src="'+e.target.result+'" style="width:100%;border-radius:12px"><p>'+f.name+'</p></div>'}; r.readAsDataURL(f);});}
+async function savePhoto(){
+  if(myRole==='navstevnik'){alert('Fotky môže pridať len prihlásený.');return;}
+  const url=document.getElementById('photoUrl').value;
+  const {error}=await supabase.from('photos').insert([{album:'13.11.2026',drive_url:url,popis:'Nahraté zo stránky',autor:currentUser?.email||''}]);
+  if(error) alert('Chyba: '+error.message); else alert('Odkaz na fotku uložený.');
+}
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeModal();}});
+initSupabase();
+</script>
+</body></html>
