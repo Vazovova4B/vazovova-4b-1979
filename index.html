@@ -108,7 +108,7 @@ input,select,textarea{width:100%;padding:10px;border:1px solid var(--line);borde
 // Su len v Cloudflare -> Pages -> Settings -> Environment variables: SUPABASE_URL, SUPABASE_ANON_KEY
 // Stranka si ich vypyta z /api/config (functions/api/config.js), ktory ich cita z Cloudflare.
 // NIKDY sem nedavaj ziadny kluc natvrdo.
-let supabase = null;
+let db = null;
 async function initSupabase(){
   const badge = document.getElementById('dbStatus');
   try{
@@ -116,8 +116,8 @@ async function initSupabase(){
     if(!r.ok) throw new Error('config endpoint: '+r.status+' - skontroluj, ci existuje functions/api/config.js a ci si nasadil Pages s Functions');
     const cfg = await r.json();
     if(!cfg.url || !cfg.anonKey) throw new Error('Cloudflare env SUPABASE_URL / SUPABASE_ANON_KEY nie su nastavene v Pages Settings');
-    supabase = window.supabase.createClient(cfg.url, cfg.anonKey);
-    supabase.auth.onAuthStateChange(()=>{refreshAuth();});
+    db = window.supabase.createClient(cfg.url, cfg.anonKey);
+    db.auth.onAuthStateChange(()=>{refreshAuth();});
     await refreshAuth(); await loadAll();
   }catch(e){
     if(badge) badge.textContent = 'Nepodarilo sa načítať konfiguráciu: '+e.message;
@@ -130,13 +130,13 @@ function show(id){document.querySelectorAll('main section').forEach(s=>s.classLi
 function fmtDate(d){if(!d)return'';const x=new Date(d+'T00:00:00');return String(x.getDate()).padStart(2,'0')+'.'+String(x.getMonth()+1).padStart(2,'0')+'.'+x.getFullYear();}
 function isDead(c){return c.stav==='už nežije';}
 async function loadAll(){
-  if(!supabase) return;
+  if(!db) return;
   const badge=document.getElementById('dbStatus');
   try{
     const [cm,ev,hi]=await Promise.all([
-      supabase.from('classmates').select('*').order('priezvisko'),
-      supabase.from('events').select('*').order('datum'),
-      supabase.from('history').select('*').order('datum',{ascending:false})
+      db.from('classmates').select('*').order('priezvisko'),
+      db.from('events').select('*').order('datum'),
+      db.from('history').select('*').order('datum',{ascending:false})
     ]);
     if(cm.error) throw cm.error; if(ev.error) throw ev.error; if(hi.error) throw hi.error;
     CLASSMATES=cm.data.map(r=>({id:r.id,meno:r.meno,priezvisko:r.priezvisko,'vydatá':r['vydatá']||'',dob:r.datum_narodenia||'',email:r.email||'',tel:r.telefon||'',wa:r.whatsapp||'',fb:r.facebook||'',stav:r.stav||'živý',sedenie:(r.sedenie_rad?r.sedenie_rad+'. rad, miesto '+(r.sedenie_miesto||''):''),opravnenie:r.opravnenie||'Štandard',zaluby:r.zaluby||'',privacy_email:r.privacy_email,privacy_telefon:r.privacy_telefon}));
@@ -147,11 +147,11 @@ async function loadAll(){
   }catch(e){ if(badge) badge.textContent='Nepodarilo sa načítať Supabase: '+e.message+' - skontroluj SUPABASE_URL a SUPABASE_ANON_KEY a RLS politiky'; }
 }
 async function refreshAuth(){
-  if(!supabase) return;
-  const {data}=await supabase.auth.getSession(); currentUser=data.session?.user||null;
+  if(!db) return;
+  const {data}=await db.auth.getSession(); currentUser=data.session?.user||null;
   myProfile=null; myRole='navstevnik';
   if(currentUser){
-    const {data:prof}=await supabase.from('classmates').select('*').eq('email',currentUser.email).maybeSingle();
+    const {data:prof}=await db.from('classmates').select('*').eq('email',currentUser.email).maybeSingle();
     myProfile=prof||null; myRole=prof?.opravnenie||'Štandard';
     document.getElementById('authBox').textContent='Prihlásený: '+(prof?prof.meno+' '+prof.priezvisko:currentUser.email)+' • Rola: '+myRole;
     document.getElementById('logoutBtn').classList.remove('hidden');
@@ -164,26 +164,26 @@ async function refreshAuth(){
 }
 async function doLogin(){
   const email=document.getElementById('loginEmail').value.trim(), pass=document.getElementById('loginPass').value;
-  const {error}=await supabase.auth.signInWithPassword({email,password:pass});
+  const {error}=await db.auth.signInWithPassword({email,password:pass});
   document.getElementById('loginMsg').textContent=error?'Chyba: '+error.message:'Prihlásenie úspešné.';
   if(!error){await refreshAuth(); await loadAll(); show('domov');}
 }
 async function doRegister(){
   const meno=document.getElementById('regMeno').value.trim(), priezvisko=document.getElementById('regPriezvisko').value.trim(), vydata=document.getElementById('regVydata').value.trim(), email=document.getElementById('regEmail').value.trim(), pass=document.getElementById('regPass').value;
   if(!meno||!priezvisko||!email||pass.length<6){document.getElementById('regMsg').textContent='Vyplň meno, priezvisko, email a heslo min. 6 znakov.';return;}
-  const {data,error}=await supabase.auth.signUp({email,password:pass});
+  const {data,error}=await db.auth.signUp({email,password:pass});
   if(error){document.getElementById('regMsg').textContent='Chyba: '+error.message;return;}
   // Zapis do classmates - vyzaduje INSERT politiku pre anon/auth v Supabase
-  const {error:e2}=await supabase.from('classmates').insert([{meno,priezvisko,'vydatá':vydata||null,email,stav:'živý',opravnenie:'Štandard'}]);
+  const {error:e2}=await db.from('classmates').insert([{meno,priezvisko,'vydatá':vydata||null,email,stav:'živý',opravnenie:'Štandard'}]);
   document.getElementById('regMsg').textContent=e2?'Účet vytvorený, ale záznam do spolužiakov sa neuložil: '+e2.message+' - povedz adminovi, nech ťa pridá.':'Registrácia hotová. Ak Supabase vyžaduje potvrdenie emailu, potvrď ho v schránke a potom sa prihlás.';
 }
 async function doForgot(){
   const email=document.getElementById('loginEmail').value.trim();
   if(!email){document.getElementById('loginMsg').textContent='Najprv napíš email.';return;}
-  const {error}=await supabase.auth.resetPasswordForEmail(email,{redirectTo:location.href});
+  const {error}=await db.auth.resetPasswordForEmail(email,{redirectTo:location.href});
   document.getElementById('loginMsg').textContent=error?'Chyba: '+error.message:'Reset odkaz poslaný na email.';
 }
-async function doLogout(){await supabase.auth.signOut(); await refreshAuth(); show('domov');}
+async function doLogout(){await db.auth.signOut(); await refreshAuth(); show('domov');}
 function renderEvents(){
   const el=document.getElementById('eventsList'); if(!EVENTS.length){el.innerHTML='Zatiaľ žiadne stretnutia.';return;}
   const future=EVENTS.filter(e=>new Date(e.datum)>=new Date(new Date().toISOString().slice(0,10)));
@@ -196,13 +196,13 @@ async function saveEvent(){
   if(!(myRole==='Admin'||myRole==='Editor')){alert('Len Editor / Admin.');return;}
   const d=document.getElementById('evDate').value,t=document.getElementById('evTime').value,p=document.getElementById('evPlace').value,desc=document.getElementById('evDesc').value;
   if(!d||!p){alert('Vyplň dátum a miesto.');return;}
-  const {error}=await supabase.from('events').insert([{datum:d,cas:t||'17:00',miesto:p,gps:p,popis:desc}]);
+  const {error}=await db.from('events').insert([{datum:d,cas:t||'17:00',miesto:p,gps:p,popis:desc}]);
   if(error) alert('Chyba: '+error.message); else {alert('Stretnutie uložené.'); await loadAll();}
 }
 async function addHistory(){
   if(!(myRole==='Admin'||myRole==='Editor')){alert('Len Editor / Admin.');return;}
   const d=document.getElementById('hDate').value,p=document.getElementById('hPlace').value,desc=document.getElementById('hDesc').value;
-  const {error}=await supabase.from('history').insert([{datum:d,miesto:p,popis:desc}]);
+  const {error}=await db.from('history').insert([{datum:d,miesto:p,popis:desc}]);
   if(error) alert('Chyba: '+error.message); else {alert('História pridaná.'); await loadAll();}
 }
 function canSeeContact(c){return myRole!=='navstevnik';}
@@ -215,7 +215,7 @@ function openProfile(c){
 function closeModal(){document.getElementById('modalRoot').innerHTML='';}
 async function saveProfile(id){
   const stav=document.getElementById('editStav').value, zaluby=document.getElementById('editZaluby').value, tel=document.getElementById('editTel').value;
-  const {error}=await supabase.from('classmates').update({stav,zaluby,telefon:tel}).eq('id',id);
+  const {error}=await db.from('classmates').update({stav,zaluby,telefon:tel}).eq('id',id);
   if(error) alert('Chyba: '+error.message); else {alert('Uložené.'); closeModal(); await loadAll();}
 }
 function renderSeats(){
@@ -246,7 +246,7 @@ async function sendMsg(){
   if(myRole==='navstevnik'){alert('Odkaz môže poslať len prihlásený.');return;}
   const subj=document.getElementById('msgSubject').value, body=document.getElementById('msgBody').value;
   const to=[...document.querySelectorAll('.rec:checked')].map(x=>x.value).join(', ');
-  const {error}=await supabase.from('messages').insert([{komu:to,predmet:subj,telo:body,odosielatel:currentUser?.email||''}]);
+  const {error}=await db.from('messages').insert([{komu:to,predmet:subj,telo:body,odosielatel:currentUser?.email||''}]);
   if(error) alert('Chyba: '+error.message); else {alert('Odoslané a uložené.'); document.getElementById('msgList').innerHTML+='<div class="card"><b>'+(subj||'Bez predmetu')+'</b><p>'+body+'</p></div>';}
 }
 function openMail(){const to=CLASSMATES.filter(c=>!isDead(c)&&c.email).map(c=>c.email).join(','); const subj=encodeURIComponent('Pozvánka: Stretnutie 4.B Vazovova 1979'); const body=encodeURIComponent('Milí spolužiaci,\n\nsrdečne vás pozývame na stretnutie 4.B - 20.06.2027 o 17:00, Reštaurácia Leberfinger, Bratislava.\n\nTešíme sa na vás!\n4.B Vazovova 1979'); window.location.href='mailto:?bcc='+encodeURIComponent(to)+'&subject='+subj+'&body='+body;}
@@ -255,7 +255,7 @@ function previewFiles(inp){const p=document.getElementById('preview'); p.innerHT
 async function savePhoto(){
   if(myRole==='navstevnik'){alert('Fotky môže pridať len prihlásený.');return;}
   const url=document.getElementById('photoUrl').value;
-  const {error}=await supabase.from('photos').insert([{album:'13.11.2026',drive_url:url,popis:'Nahraté zo stránky',autor:currentUser?.email||''}]);
+  const {error}=await db.from('photos').insert([{album:'13.11.2026',drive_url:url,popis:'Nahraté zo stránky',autor:currentUser?.email||''}]);
   if(error) alert('Chyba: '+error.message); else alert('Odkaz na fotku uložený.');
 }
 document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeModal();}});
