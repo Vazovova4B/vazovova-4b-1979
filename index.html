@@ -194,13 +194,13 @@ async function doRegister(){
   if(data&&data.user&&data.user.identities&&data.user.identities.length===0){document.getElementById('regMsg').textContent='Tento e-mail je už registrovaný. Ak si nepamätáš heslo, klikni na Prihlásiť sa a potom na Zabudnuté heslo.';return;}
   // Zapis do classmates - vyzaduje INSERT politiku pre anon/auth v Supabase
   const e2=null;
-  document.getElementById('regMsg').textContent=e2?'Účet vytvorený, ale záznam do spolužiakov sa neuložil: '+e2.message+' - povedz adminovi, nech ťa pridá.':'Hotovo! Poslali sme ti e-mail s potvrdzovacím odkazom. Otvor ho (pozri aj do priečinka Spam), klikni na odkaz a potom sa vráť sem a prihlás sa svojím e-mailom a heslom.';
+  document.getElementById('regMsg').textContent=e2?'Účet vytvorený, ale záznam do spolužiakov sa neuložil: '+e2.message+' - povedz adminovi, nech ťa pridá.':'Hotovo! Poslali sme ti e-mail s potvrdzovacím odkazom. Ak ho nevidíš v doručenej pošte, pozri aj do priečinka SPAM (nevyžiadaná pošta). Klikni na odkaz a potom sa vráť sem a prihlás sa svojím e-mailom a heslom.';
 }
 async function doForgot(){
   const email=document.getElementById('loginEmail').value.trim();
   if(!email){document.getElementById('loginMsg').textContent='Najprv napíš email.';return;}
   const {error}=await db.auth.resetPasswordForEmail(email,{redirectTo:location.origin+'/'});
-  document.getElementById('loginMsg').textContent=error?'Chyba: '+error.message:'Reset odkaz poslaný na email.';
+  document.getElementById('loginMsg').textContent=error?'Chyba: '+error.message:'Reset odkaz bol poslaný na tvoj e-mail. Ak ho nevidíš v doručenej pošte, pozri aj do priečinka SPAM (nevyžiadaná pošta). Odkaz klikni len raz.';
 }
 async function doSetNewPassword(){
   const a=document.getElementById('newPass1').value, b=document.getElementById('newPass2').value, m=document.getElementById('newPassMsg');
