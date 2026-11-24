@@ -44,7 +44,8 @@ input,select,textarea{width:100%;padding:10px;border:1px solid var(--line);borde
 </div>
 <div class="wrap" style="padding-bottom:10px;display:flex;gap:8px;flex-wrap:wrap;align-items:center">
 <span id="authBox" class="badge">Neprihlásený - vidíš len aktivity a mená</span>
-<button class="btn2" style="width:auto" onclick="show('login')">Prihlásiť / Registrovať</button>
+<button class="btn2" style="width:auto" id="loginBtn" onclick="show('login')">Prihlásiť</button>
+<button class="btn2" style="width:auto" id="regBtn" onclick="show('registracia')">Registrovať</button>
 <button class="btn2 hidden" style="width:auto" id="logoutBtn" onclick="doLogout()">Odhlásiť sa</button>
 </div></header>
 <main class="wrap">
@@ -58,11 +59,13 @@ input,select,textarea{width:100%;padding:10px;border:1px solid var(--line);borde
 <div class="card"><h2>Posledné fotky</h2><p style="font-size:13px;color:var(--mut)">Fotky sú v Google Drive.</p><div class="grid" id="lastPhotos"></div></div>
 </section>
 <section id="login" class="hidden"><div class="card"><h2>Prihlásenie</h2>
+<p id="loginInfo" style="font-size:13px;color:var(--mut)"></p>
 <label>Email</label><input id="loginEmail" type="email" placeholder="tvoj@email.sk">
 <label>Heslo</label><input id="loginPass" type="password" placeholder="Heslo">
 <div class="row"><button class="btn" onclick="doLogin()">Prihlásiť sa</button><button class="btn2" onclick="doForgot()">Zabudnuté heslo - poslať reset na email</button></div>
 <p id="loginMsg" style="font-size:13px"></p>
-<h3>Registrácia nového spolužiaka</h3>
+<p style="font-size:13px;color:var(--mut)">Ešte nemáš účet? <a href="#" onclick="show('registracia');return false">Registrovať sa</a></p></div></section>
+<section id="registracia" class="hidden"><div class="card"><h2>Registrácia nového spolužiaka</h2>
 <p style="font-size:13px;color:var(--mut)">Použi e-mail, na ktorý ti prišla pozvánka. Po registrácii potvrď e-mail v schránke a potom sa prihlás.</p>
 <input type="hidden" id="regMeno">
 <input type="hidden" id="regPriezvisko">
@@ -70,7 +73,14 @@ input,select,textarea{width:100%;padding:10px;border:1px solid var(--line);borde
 <label>Email</label><input id="regEmail" type="email" placeholder="tvoj@email.sk">
 <label>Heslo (min. 6 znakov)</label><input id="regPass" type="password">
 <div class="row"><button class="btn" onclick="doRegister()">Registrovať sa</button></div>
-<p id="regMsg" style="font-size:13px"></p></div></section>
+<p id="regMsg" style="font-size:13px"></p>
+<p style="font-size:13px;color:var(--mut)">Už máš účet? <a href="#" onclick="show('login');return false">Prihlásiť sa</a></p></div></section>
+<section id="noveheslo" class="hidden"><div class="card"><h2>Zadaj nové heslo</h2>
+<p style="font-size:13px;color:var(--mut)">Napíš nové heslo (min. 6 znakov) dvakrát rovnako a klikni na Uložiť.</p>
+<label>Nové heslo</label><input id="newPass1" type="password">
+<label>Nové heslo ešte raz</label><input id="newPass2" type="password">
+<div class="row"><button class="btn" onclick="doSetNewPassword()">Uložiť nové heslo</button></div>
+<p id="newPassMsg" style="font-size:13px"></p></div></section>
 <section id="stretnutia" class="hidden"><div class="card"><h2>Stretnutia</h2><div id="eventsList">Načítavam...</div>
 <div id="eventForm" class="hidden"><h3>Nové stretnutie (Editor / Admin)</h3>
 <label>Dátum</label><input type="date" id="evDate"><label>Čas (24h)</label><input type="time" id="evTime" value="17:00">
@@ -109,6 +119,9 @@ input,select,textarea{width:100%;padding:10px;border:1px solid var(--line);borde
 // Stranka si ich vypyta z /api/config (functions/api/config.js), ktory ich cita z Cloudflare.
 // NIKDY sem nedavaj ziadny kluc natvrdo.
 let db = null;
+const URL_HASH = location.hash || '';
+const IS_RECOVERY = URL_HASH.indexOf('type=recovery') !== -1 && URL_HASH.indexOf('error_code') === -1;
+const LINK_EXPIRED = URL_HASH.indexOf('error_code=otp_expired') !== -1;
 async function initSupabase(){
   const badge = document.getElementById('dbStatus');
   try{
@@ -117,8 +130,10 @@ async function initSupabase(){
     const cfg = await r.json();
     if(!cfg.url || !cfg.anonKey) throw new Error('Cloudflare env SUPABASE_URL / SUPABASE_ANON_KEY nie su nastavene v Pages Settings');
     db = window.supabase.createClient(cfg.url, cfg.anonKey);
-    db.auth.onAuthStateChange(()=>{refreshAuth();});
+    db.auth.onAuthStateChange((event)=>{ if(event==='PASSWORD_RECOVERY'){ show('noveheslo'); } refreshAuth(); });
     await refreshAuth(); await loadAll();
+    if(IS_RECOVERY){ show('noveheslo'); }
+    else if(LINK_EXPIRED){ show('login'); document.getElementById('loginInfo').textContent='Odkaz z e-mailu už neplatí alebo bol raz použitý. Napíš e-mail a klikni na Zabudnuté heslo - pošleme nový odkaz.'; }
   }catch(e){
     if(badge) badge.textContent = 'Nepodarilo sa načítať konfiguráciu: '+e.message;
     console.warn(e);
@@ -156,10 +171,12 @@ async function refreshAuth(){
     myProfile=prof||null; myRole=prof?(prof.opravnenie||'Štandard'):'navstevnik';
     document.getElementById('authBox').textContent='Prihlásený: '+(prof?prof.meno+' '+prof.priezvisko:currentUser.email)+' • Rola: '+myRole;
     document.getElementById('logoutBtn').classList.remove('hidden');
+    document.getElementById('loginBtn').classList.add('hidden'); document.getElementById('regBtn').classList.add('hidden');
     if(myRole==='Admin'||myRole==='Editor'){document.getElementById('eventForm').classList.remove('hidden');document.getElementById('historyForm').classList.remove('hidden');}
   } else {
     document.getElementById('authBox').textContent='Neprihlásený - vidíš len aktivity a mená';
     document.getElementById('logoutBtn').classList.add('hidden');
+    document.getElementById('loginBtn').classList.remove('hidden'); document.getElementById('regBtn').classList.remove('hidden');
   }
   renderTable(); renderSeats();
 }
@@ -173,7 +190,8 @@ async function doRegister(){
   const meno=document.getElementById('regMeno').value.trim(), priezvisko=document.getElementById('regPriezvisko').value.trim(), vydata=document.getElementById('regVydata').value.trim(), email=document.getElementById('regEmail').value.trim(), pass=document.getElementById('regPass').value;
   if(!email||pass.length<6){document.getElementById('regMsg').textContent='Vyplň email a heslo min. 6 znakov.';return;}
   const {data,error}=await db.auth.signUp({email,password:pass});
-  if(error){document.getElementById('regMsg').textContent='Chyba: '+error.message;return;}
+  if(error){document.getElementById('regMsg').textContent=/already|registered/i.test(error.message)?'Tento e-mail je už registrovaný. Ak si nepamätáš heslo, klikni na Prihlásiť sa a potom na Zabudnuté heslo.':'Chyba: '+error.message;return;}
+  if(data&&data.user&&data.user.identities&&data.user.identities.length===0){document.getElementById('regMsg').textContent='Tento e-mail je už registrovaný. Ak si nepamätáš heslo, klikni na Prihlásiť sa a potom na Zabudnuté heslo.';return;}
   // Zapis do classmates - vyzaduje INSERT politiku pre anon/auth v Supabase
   const e2=null;
   document.getElementById('regMsg').textContent=e2?'Účet vytvorený, ale záznam do spolužiakov sa neuložil: '+e2.message+' - povedz adminovi, nech ťa pridá.':'Hotovo! Poslali sme ti e-mail s potvrdzovacím odkazom. Otvor ho (pozri aj do priečinka Spam), klikni na odkaz a potom sa vráť sem a prihlás sa svojím e-mailom a heslom.';
@@ -181,8 +199,18 @@ async function doRegister(){
 async function doForgot(){
   const email=document.getElementById('loginEmail').value.trim();
   if(!email){document.getElementById('loginMsg').textContent='Najprv napíš email.';return;}
-  const {error}=await db.auth.resetPasswordForEmail(email,{redirectTo:location.href});
+  const {error}=await db.auth.resetPasswordForEmail(email,{redirectTo:location.origin+'/'});
   document.getElementById('loginMsg').textContent=error?'Chyba: '+error.message:'Reset odkaz poslaný na email.';
+}
+async function doSetNewPassword(){
+  const a=document.getElementById('newPass1').value, b=document.getElementById('newPass2').value, m=document.getElementById('newPassMsg');
+  if(a.length<6){m.textContent='Heslo musí mať aspoň 6 znakov.';return;}
+  if(a!==b){m.textContent='Obe heslá musia byť rovnaké.';return;}
+  const {error}=await db.auth.updateUser({password:a});
+  if(error){m.textContent='Chyba: '+error.message;return;}
+  m.textContent='Heslo bolo zmenené.';
+  document.getElementById('newPass1').value=''; document.getElementById('newPass2').value='';
+  await refreshAuth(); await loadAll(); show('domov');
 }
 async function doLogout(){await db.auth.signOut(); await refreshAuth(); show('domov');}
 function renderEvents(){
