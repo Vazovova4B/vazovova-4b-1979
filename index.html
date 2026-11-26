@@ -28,6 +28,7 @@ input,select,textarea{width:100%;padding:10px;border:1px solid var(--line);borde
 .modal{position:fixed;inset:0;background:rgba(0,0,0,.45);display:flex;align-items:flex-start;justify-content:center;z-index:40;padding:20px;overflow:auto}
 .modal>div{background:#fff;border-radius:16px;max-width:680px;width:100%;padding:18px;position:relative}
 .x{position:absolute;right:12px;top:10px;font-size:24px;cursor:pointer;border:0;background:transparent}
+body.anon [data-nav]{display:none}
 @media(max-width:640px){h1{font-size:32px}}
 </style></head>
 <body>
@@ -43,13 +44,13 @@ input,select,textarea{width:100%;padding:10px;border:1px solid var(--line);borde
 <button onclick="show('odkazy')" data-nav="odkazy">Odkazy</button>
 </div>
 <div class="wrap" style="padding-bottom:10px;display:flex;gap:8px;flex-wrap:wrap;align-items:center">
-<span id="authBox" class="badge">Neprihlásený - vidíš len aktivity a mená</span>
+<span id="authBox" class="badge">Neprihlásený</span>
 <button class="btn2" style="width:auto" id="loginBtn" onclick="show('login')">Prihlásiť</button>
 <button class="btn2" style="width:auto" id="regBtn" onclick="show('registracia')">Registrovať</button>
 <button class="btn2 hidden" style="width:auto" id="logoutBtn" onclick="doLogout()">Odhlásiť sa</button>
 </div></header>
 <main class="wrap">
-<section id="domov">
+<section id="domov" class="hidden">
 <div class="card"><div class="badge">47 ROKOV OD MATURITY A STÁLE SPOLU</div><p id="dbStatus" style="font-size:13px;color:var(--mut)">Načítavam zo Supabase...</p>
 <h1>4.B — Vazovova<br><span style="color:var(--sage)">1979</span></h1>
 <p>Digitálny triedny album pre spolužiakov, ktorí sa stále stretávajú. Spomienky, fotografie, plány a všetky cesty späť k sebe.</p>
@@ -58,7 +59,7 @@ input,select,textarea{width:100%;padding:10px;border:1px solid var(--line);borde
 <div class="card"><h2>Najbližšie stretnutie</h2><div id="nextEvent">Načítavam...</div></div>
 <div class="card"><h2>Posledné fotky</h2><p style="font-size:13px;color:var(--mut)">Fotky sú v Google Drive.</p><div class="grid" id="lastPhotos"></div></div>
 </section>
-<section id="login" class="hidden"><div class="card"><h2>Prihlásenie</h2>
+<section id="login"><div class="card"><h2>Prihlásenie</h2>
 <p id="loginInfo" style="font-size:13px;color:var(--mut)"></p>
 <label>Email</label><input id="loginEmail" type="email" placeholder="tvoj@email.sk">
 <label>Heslo</label><input id="loginPass" type="password" placeholder="Heslo">
@@ -97,14 +98,14 @@ input,select,textarea{width:100%;padding:10px;border:1px solid var(--line);borde
 <input id="searchSeat" placeholder="Hľadaj meno" oninput="renderSeats()"><div id="virtual"></div>
 <h3>Tabuľkový zasadací poriadok</h3><div id="seatsTable"></div>
 <h3>Učitelia</h3><div id="teachers"></div></div></section>
-<section id="tabulka" class="hidden"><div class="card"><h2>Tabuľka spolužiakov</h2><p id="tableNote"></p><input placeholder="Hľadaj meno..." oninput="renderTable(this.value)"><div style="overflow:auto"><table><thead><tr><th>Meno</th><th>Priezvisko</th><th>Vydatá</th><th>Stav</th><th>Sedenie</th><th>Kontakt</th></tr></thead><tbody id="tbody"></tbody></table></div></div></section>
+<section id="tabulka" class="hidden"><div class="card"><h2>Tabuľka spolužiakov</h2><p id="tableNote"></p><input placeholder="Hľadaj meno..." oninput="renderTable(this.value)"><div style="overflow:auto"><table><thead><tr><th>Meno</th><th>Priezvisko</th><th>Vydatá</th><th>Sedenie</th><th>Kontakt</th></tr></thead><tbody id="tbody"></tbody></table></div></div></section>
 <section id="historia" class="hidden"><div class="card"><h2>História</h2><div id="historyList">Načítavam...</div>
 <div id="historyForm" class="hidden"><h3>Pridať minulú akciu (Editor / Admin)</h3><label>Dátum</label><input type="date" id="hDate"><label>Miesto</label><input id="hPlace"><label>Popis</label><textarea id="hDesc"></textarea><button class="btn" onclick="addHistory()">Pridať</button></div></div></section>
 <section id="nahrat" class="hidden"><div class="card"><h2>Nahrať fotky</h2><p>Pre dôchodcov - jednoducho: stlač, vyber fotky, ulož.</p>
 <label class="btn" style="display:inline-block;text-align:center">📷 NAHRAŤ FOTKY Z MOBILU<input type="file" id="fileInput" accept="image/*" multiple style="display:none" onchange="previewFiles(this)"></label>
 <div class="grid" id="preview"></div><p style="font-size:13px">Fotka sa uloží ako záznam do Supabase (odkaz). Samotné súbory ostávajú v Google Drive - po výbere fotiek ich nahraj aj do Drive priečinka 13.11.2026 a sem vlož odkaz.</p>
 <label>Odkaz na fotku v Drive / popis</label><input id="photoUrl" placeholder="Drive odkaz alebo popis"><button class="btn" onclick="savePhoto()">Uložiť odkaz na fotku</button></div></section>
-<section id="odkazy" class="hidden"><div class="card"><h2>Odkazy</h2><p>Zosnulí - <i>už nežije</i> - sa automaticky nezobrazujú v príjemcoch.</p>
+<section id="odkazy" class="hidden"><div class="card"><h2>Odkazy</h2><p>Zosnulí (✝) sa automaticky nezobrazujú v príjemcoch.</p>
 <div class="row"><a class="btn2" style="text-decoration:none" href="https://facebook.com" target="_blank" rel="noopener">Facebook</a><a class="btn2" style="text-decoration:none" href="https://instagram.com" target="_blank" rel="noopener">Instagram</a><a class="btn2" style="text-decoration:none" href="https://youtube.com" target="_blank" rel="noopener">YouTube</a><a class="btn2" style="text-decoration:none" href="https://whatsapp.com" target="_blank" rel="noopener">WhatsApp</a></div>
 <h3>Napísať odkaz</h3><div id="recipients" style="max-height:180px;overflow:auto;border:1px solid var(--line);border-radius:12px;padding:10px"></div>
 <div class="row"><button class="btn2" onclick="selectAll(true)">Vybrať všetkých</button><button class="btn2" onclick="selectAll(false)">Zrušiť výber</button></div>
@@ -131,7 +132,7 @@ async function initSupabase(){
     if(!cfg.url || !cfg.anonKey) throw new Error('Cloudflare env SUPABASE_URL / SUPABASE_ANON_KEY nie su nastavene v Pages Settings');
     db = window.supabase.createClient(cfg.url, cfg.anonKey);
     db.auth.onAuthStateChange((event)=>{ if(event==='PASSWORD_RECOVERY'){ show('noveheslo'); } refreshAuth(); });
-    await refreshAuth(); await loadAll();
+    await refreshAuth(); if(myProfile){ await loadAll(); }
     if(IS_RECOVERY){ show('noveheslo'); }
     else if(LINK_EXPIRED){ show('login'); document.getElementById('loginInfo').textContent='Odkaz z e-mailu už neplatí alebo bol raz použitý. Napíš e-mail a klikni na Zabudnuté heslo - pošleme nový odkaz.'; }
   }catch(e){
@@ -144,18 +145,19 @@ let currentUser=null, myProfile=null, myRole='navstevnik';
 function show(id){document.querySelectorAll('main section').forEach(s=>s.classList.add('hidden'));document.getElementById(id).classList.remove('hidden');document.querySelectorAll('[data-nav]').forEach(b=>b.classList.toggle('active',b.getAttribute('data-nav')===id));}
 function fmtDate(d){if(!d)return'';const x=new Date(d+'T00:00:00');return String(x.getDate()).padStart(2,'0')+'.'+String(x.getMonth()+1).padStart(2,'0')+'.'+x.getFullYear();}
 function isDead(c){return c.stav==='už nežije';}
+function kriz(c){return isDead(c)?'✝'+(c.umrtie?' '+fmtDate(c.umrtie):''):'';}
 async function loadAll(){
   if(!db) return;
   const badge=document.getElementById('dbStatus');
   try{
     const [kt,cm,ev,hi]=await Promise.all([ (currentUser?db.rpc('kontakty'):Promise.resolve({data:[],error:null})),
-      db.from('classmates').select(currentUser ? 'id,meno,priezvisko,"vydatá",stav,sedenie_rad,sedenie_miesto,zaluby' : 'id,meno,priezvisko,"vydatá",stav,sedenie_rad,sedenie_miesto').order('priezvisko'),
+      db.from('classmates').select('id,meno,priezvisko,"vydatá",stav,datum_umrtia,sedenie_rad,sedenie_miesto,zaluby').order('priezvisko'),
       db.from('events').select('*').order('datum'),
       db.from('history').select('*').order('datum',{ascending:false})
     ]);
     if(cm.error) throw cm.error; if(kt.error) throw kt.error; if(ev.error) throw ev.error; if(hi.error) throw hi.error;
     const K={}; (kt.data||[]).forEach(k=>{K[k.id]=k;}); cm.data=cm.data.map(r=>Object.assign({},r,K[r.id]||{}));
-    CLASSMATES=cm.data.map(r=>({id:r.id,meno:r.meno,priezvisko:r.priezvisko,'vydatá':r['vydatá']||'',dob:r.datum_narodenia||'',email:r.email||'',tel:r.telefon||'',wa:r.whatsapp||'',fb:r.facebook||'',stav:r.stav||'živý',sedenie:(r.sedenie_rad?r.sedenie_rad+'. rad, miesto '+(r.sedenie_miesto||''):''),opravnenie:r.opravnenie||'Štandard',zaluby:r.zaluby||'',privacy_email:r.privacy_email,privacy_telefon:r.privacy_telefon}));
+    CLASSMATES=cm.data.map(r=>({id:r.id,meno:r.meno,priezvisko:r.priezvisko,'vydatá':r['vydatá']||'',dob:r.datum_narodenia||'',email:r.email||'',tel:r.telefon||'',wa:r.whatsapp||'',fb:r.facebook||'',stav:r.stav||'živý',umrtie:r.datum_umrtia||'',sedenie:(r.sedenie_rad?r.sedenie_rad+'. rad, miesto '+(r.sedenie_miesto||''):''),opravnenie:r.opravnenie||'Štandard',zaluby:r.zaluby||'',privacy_email:r.privacy_email,privacy_telefon:r.privacy_telefon}));
     EVENTS=ev.data||[]; HISTORY=hi.data||[];
     document.getElementById('countClass').textContent=CLASSMATES.length;
     if(badge) badge.textContent='Načítané zo Supabase: '+CLASSMATES.length+' spolužiakov';
@@ -174,17 +176,28 @@ async function refreshAuth(){
     document.getElementById('loginBtn').classList.add('hidden'); document.getElementById('regBtn').classList.add('hidden');
     if(myRole==='Admin'||myRole==='Editor'){document.getElementById('eventForm').classList.remove('hidden');document.getElementById('historyForm').classList.remove('hidden');}
   } else {
-    document.getElementById('authBox').textContent='Neprihlásený - vidíš len aktivity a mená';
+    document.getElementById('authBox').textContent='Neprihlásený';
     document.getElementById('logoutBtn').classList.add('hidden');
     document.getElementById('loginBtn').classList.remove('hidden'); document.getElementById('regBtn').classList.remove('hidden');
   }
+  applyGate();
   renderTable(); renderSeats();
+}
+function applyGate(){
+  const member=!!myProfile;
+  document.body.classList.toggle('anon',!member);
+  const cur=[...document.querySelectorAll('main section')].find(x=>!x.classList.contains('hidden'));
+  const curId=cur?cur.id:'';
+  if(!member){
+    if(['login','registracia','noveheslo'].indexOf(curId)===-1){ show('login'); }
+    if(currentUser){ document.getElementById('loginInfo').textContent='Tento e-mail nie je v zozname spolužiakov. Napíš správcovi stránky, aby ťa pridal.'; }
+  } else if(curId==='login'||curId==='registracia'){ show('domov'); }
 }
 async function doLogin(){
   const email=document.getElementById('loginEmail').value.trim(), pass=document.getElementById('loginPass').value;
   const {error}=await db.auth.signInWithPassword({email,password:pass});
   document.getElementById('loginMsg').textContent=error?'Chyba: '+error.message:'Prihlásenie úspešné.';
-  if(!error){await refreshAuth(); await loadAll(); show('domov');}
+  if(!error){await refreshAuth(); if(myProfile){ await loadAll(); show('domov'); }}
 }
 async function doRegister(){
   const meno=document.getElementById('regMeno').value.trim(), priezvisko=document.getElementById('regPriezvisko').value.trim(), vydata=document.getElementById('regVydata').value.trim(), email=document.getElementById('regEmail').value.trim(), pass=document.getElementById('regPass').value;
@@ -210,9 +223,9 @@ async function doSetNewPassword(){
   if(error){m.textContent='Chyba: '+error.message;return;}
   m.textContent='Heslo bolo zmenené.';
   document.getElementById('newPass1').value=''; document.getElementById('newPass2').value='';
-  await refreshAuth(); await loadAll(); show('domov');
+  await refreshAuth(); if(myProfile){ await loadAll(); show('domov'); }
 }
-async function doLogout(){await db.auth.signOut(); await refreshAuth(); show('domov');}
+async function doLogout(){await db.auth.signOut(); CLASSMATES=[];EVENTS=[];HISTORY=[]; document.getElementById('modalRoot').innerHTML=''; await refreshAuth(); show('login');}
 function renderEvents(){
   const el=document.getElementById('eventsList'); if(!EVENTS.length){el.innerHTML='Zatiaľ žiadne stretnutia.';return;}
   const future=EVENTS.filter(e=>new Date(e.datum)>=new Date(new Date().toISOString().slice(0,10)));
@@ -239,19 +252,22 @@ function openProfile(c){
   if(myRole==='navstevnik'){alert('Pre zobrazenie fotiek a profilov sa prosím prihláste.');return;}
   const dead=isDead(c);
   const canEdit=myRole==='Admin'||(myProfile&&myProfile.id===c.id);
-  document.getElementById('modalRoot').innerHTML='<div class="modal" onclick="if(event.target===this)closeModal()"><div><button class="x" onclick="closeModal()">×</button><h2>'+c.meno+' '+c.priezvisko+(dead?' <span class="ribbon">† Spomíname - už nežije</span>':'')+'</h2><p><b>Vydatá:</b> '+(c['vydatá']||'-')+'</p><p><b>Sedel/a:</b> '+(c.sedenie||'-')+'</p><p><b>Stav:</b> '+c.stav+'</p>'+(canSeeContact(c)?'<p><b>Email:</b> '+(c.email||'-')+'</p><p><b>Telefón:</b> '+(c.tel||'-')+'</p><p><b>Záľuby:</b> '+(c.zaluby||'-')+'</p>':'<p>Kontakty vidí len prihlásený spolužiak.</p>')+(canEdit?'<div style="border:1px solid #E8E2D8;border-radius:12px;padding:12px"><h3>Upraviť profil</h3><label>Stav</label><select id="editStav"><option value="živý" '+(c.stav==='živý'?'selected':'')+'>Živý</option><option value="už nežije" '+(isDead(c)?'selected':'')+'>Už nežije</option></select><label>Záľuby</label><input id="editZaluby" value="'+(c.zaluby||'')+'"><label>Telefón</label><input id="editTel" value="'+(c.tel||'')+'"><button class="btn" onclick="saveProfile(\''+c.id+'\')">Uložiť</button></div>':'')+'</div></div>';
+  document.getElementById('modalRoot').innerHTML='<div class="modal" onclick="if(event.target===this)closeModal()"><div><button class="x" onclick="closeModal()">×</button><h2>'+c.meno+' '+c.priezvisko+(dead?' <span class="ribbon">'+kriz(c)+'</span>':'')+'</h2><p><b>Vydatá:</b> '+(c['vydatá']||'-')+'</p><p><b>Sedel/a:</b> '+(c.sedenie||'-')+'</p>'+(dead?'<p><b>Úmrtie:</b> '+kriz(c)+'</p>':'')+(canSeeContact(c)?'<p><b>Email:</b> '+(c.email||'-')+'</p><p><b>Telefón:</b> '+(c.tel||'-')+'</p><p><b>Záľuby:</b> '+(c.zaluby||'-')+'</p>':'<p>Kontakty vidí len prihlásený spolužiak.</p>')+(canEdit?'<div style="border:1px solid #E8E2D8;border-radius:12px;padding:12px"><h3>Upraviť profil</h3>'+(myRole==='Admin'?'<label>Zosnulý/á (✝)</label><select id="editStav"><option value="živý" '+(c.stav==='živý'?'selected':'')+'>Nie</option><option value="už nežije" '+(isDead(c)?'selected':'')+'>Áno ✝</option></select><label>Dátum úmrtia (ak je známy)</label><input type="date" id="editUmrtie" value="'+(c.umrtie||'')+'">':'')+'<label>Záľuby</label><input id="editZaluby" value="'+(c.zaluby||'')+'"><label>Telefón</label><input id="editTel" value="'+(c.tel||'')+'"><button class="btn" onclick="saveProfile(\''+c.id+'\')">Uložiť</button></div>':'')+'</div></div>';
 }
 function closeModal(){document.getElementById('modalRoot').innerHTML='';}
 async function saveProfile(id){
-  const stav=document.getElementById('editStav').value, zaluby=document.getElementById('editZaluby').value, tel=document.getElementById('editTel').value;
-  const {error}=await db.from('classmates').update({stav,zaluby,telefon:tel}).eq('id',id);
+  const zaluby=document.getElementById('editZaluby').value, tel=document.getElementById('editTel').value;
+  const upd={zaluby,telefon:tel};
+  const st=document.getElementById('editStav');
+  if(st){ upd.stav=st.value; const du=document.getElementById('editUmrtie').value; upd.datum_umrtia=(st.value==='už nežije'&&du)?du:null; }
+  const {error}=await db.from('classmates').update(upd).eq('id',id);
   if(error) alert('Chyba: '+error.message); else {alert('Uložené.'); closeModal(); await loadAll();}
 }
 function renderSeats(){
   const q=(document.getElementById('searchSeat')?.value||'').toLowerCase();
   const v=document.getElementById('virtual'); if(!v) return;
   let html='<p style="font-size:13px">Tabuľa je vpredu. Klikni na postavu.</p><div class="grid">';
-  CLASSMATES.forEach(c=>{const hl=(c.meno+' '+c.priezvisko).toLowerCase().includes(q)&&q; html+='<div class="seat '+(isDead(c)?'dead':'')+'" style="'+(hl?'outline:3px solid var(--sage)':'')+'" onclick="openProfileByName(\''+c.meno+' '+c.priezvisko+'\')">'+(isDead(c)?'<span class="ribbon">† Spomíname</span><br>':'')+'<b>'+c.meno+' '+c.priezvisko+'</b><br><span style="font-size:12px">'+(c.sedenie||'')+'</span></div>';});
+  CLASSMATES.forEach(c=>{const hl=(c.meno+' '+c.priezvisko).toLowerCase().includes(q)&&q; html+='<div class="seat '+(isDead(c)?'dead':'')+'" style="'+(hl?'outline:3px solid var(--sage)':'')+'" onclick="openProfileByName(\''+c.meno+' '+c.priezvisko+'\')">'+(isDead(c)?'<span class="ribbon">'+kriz(c)+'</span><br>':'')+'<b>'+c.meno+' '+c.priezvisko+'</b><br><span style="font-size:12px">'+(c.sedenie||'')+'</span></div>';});
   html+='</div>'; v.innerHTML=html;
   document.getElementById('seatsTable').innerHTML='<div class="grid">'+CLASSMATES.map(c=>'<div class="seat '+(isDead(c)?'dead':'')+'">'+c.sedenie+' - '+c.meno+' '+c.priezvisko+'</div>').join('')+'</div>';
   document.getElementById('teachers').innerHTML=['Gruniková - učiteľka','Tarajová Skladanová - učiteľka','Eva Králová - učiteľka'].map(x=>'<span class="badge">'+x+'</span>').join(' ');
@@ -259,7 +275,7 @@ function renderSeats(){
 function openProfileByName(n){const c=CLASSMATES.find(x=>x.meno+' '+x.priezvisko===n); if(c) openProfile(c);}
 function renderTable(q=''){
   const rows=CLASSMATES.filter(c=>(c.meno+' '+c.priezvisko).toLowerCase().includes(q.toLowerCase()));
-  document.getElementById('tbody').innerHTML=rows.map(c=>'<tr style="'+(isDead(c)?'background:#F0F0F0':'')+'"><td>'+c.meno+'</td><td>'+c.priezvisko+(isDead(c)?' †':'')+'</td><td>'+(c['vydatá']||'')+'</td><td>'+c.stav+'</td><td>'+(c.sedenie||'')+'</td><td>'+(canSeeContact(c)?(c.email||'-'):'len pre prihlásených')+'</td></tr>').join('');
+  document.getElementById('tbody').innerHTML=rows.map(c=>'<tr style="'+(isDead(c)?'background:#F0F0F0':'')+'"><td>'+c.meno+'</td><td>'+c.priezvisko+(isDead(c)?' '+kriz(c):'')+'</td><td>'+(c['vydatá']||'')+'</td><td>'+(c.sedenie||'')+'</td><td>'+(canSeeContact(c)?(c.email||'-'):'len pre prihlásených')+'</td></tr>').join('');
   document.getElementById('tableNote').textContent=myRole==='navstevnik'?'Neprihlásený: vidíš len mená a sedenie, bez kontaktov a fotiek.':'Prihlásený: vidíš kontakty.';
 }
 function renderPhotos(){
