@@ -28,6 +28,25 @@ input,select,textarea{width:100%;padding:10px;border:1px solid var(--line);borde
 .modal{position:fixed;inset:0;background:rgba(0,0,0,.45);display:flex;align-items:flex-start;justify-content:center;z-index:40;padding:20px;overflow:auto}
 .modal>div{background:#fff;border-radius:16px;max-width:680px;width:100%;padding:18px;position:relative}
 .x{position:absolute;right:12px;top:10px;font-size:24px;cursor:pointer;border:0;background:transparent}
+
+.room{background:linear-gradient(#F6F0E6,#E8DECC);border:1px solid var(--line);border-radius:16px;padding:12px 10px 14px}
+.board{background:#2F4A3A;color:#EAF1EA;text-align:center;border-radius:6px;padding:6px;font-size:12px;letter-spacing:.2em;margin:0 6% 14px;border:3px solid #8A6B45}
+.rrow{display:grid;grid-template-columns:1fr 1fr 1fr .5fr;gap:8px;margin-bottom:6px}
+.desk{display:flex;justify-content:center;position:relative;padding-bottom:12px}
+.desk::after{content:"";position:absolute;left:3%;right:3%;bottom:0;height:9px;background:#C9B79C;border-radius:4px;box-shadow:0 2px 0 #A9946F}
+.slot{flex:1;display:flex;justify-content:center;min-width:0}
+.fig{width:46px;height:72px;perspective:700px;cursor:default}
+.fig[onclick]{cursor:pointer}
+.fig .inner{position:relative;width:100%;height:100%;transform-style:preserve-3d;transition:transform .9s ease;transition-delay:var(--d,0s)}
+.room.turned .fig .inner{transform:rotateY(180deg)}
+.fig .face{position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;text-align:center}
+.fig .front{transform:rotateY(180deg)}
+.fig .nm{font-size:9px;line-height:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#333;font-weight:600}
+.fig.dead .front{filter:grayscale(1)}
+.fig .kz{position:absolute;top:-2px;right:-1px;font-size:11px;background:#111;color:#fff;border-radius:6px;padding:0 3px;line-height:14px}
+.fig.hl .front{outline:3px solid var(--sage);border-radius:10px}
+.fig:hover .front svg{transform:scale(1.06)}
+.chip{display:inline-block;border:1px solid var(--line);background:#fff;border-radius:999px;padding:5px 10px;margin:3px;font-size:13px;cursor:pointer}
 body.anon [data-nav]{display:none}
 @media(max-width:640px){h1{font-size:32px}}
 </style></head>
@@ -59,7 +78,7 @@ body.anon [data-nav]{display:none}
 <div class="card"><h2>Najbližšie stretnutie</h2><div id="nextEvent">Načítavam...</div></div>
 <div class="card"><h2>Posledné fotky</h2><p style="font-size:13px;color:var(--mut)">Fotky sú v Google Drive.</p><div class="grid" id="lastPhotos"></div></div>
 </section>
-<section id="login"><div class="card"><h2>Prihlásenie</h2>
+<section id="login"><div class="card"><div id="loginRoom"></div><h2>Prihlásenie</h2>
 <p id="loginInfo" style="font-size:13px;color:var(--mut)"></p>
 <label>Email</label><input id="loginEmail" type="email" placeholder="tvoj@email.sk">
 <label>Heslo</label><input id="loginPass" type="password" placeholder="Heslo">
@@ -94,9 +113,8 @@ body.anon [data-nav]{display:none}
 <a class="btn2" style="text-decoration:none" href="https://drive.google.com/drive/folders/1Elwg5xzr0gGvwvpMRYvMCuz1puSyxHX0" target="_blank" rel="noopener">Otvoriť album 13.11.2026</a></div>
 <h3>Album: Stretávka 13.11.2026</h3><div class="grid" id="gallery"></div></div></section>
 <section id="trieda" class="hidden"><div class="card"><h2>Naša trieda</h2>
-<p><b>Virtuálna trieda:</b> vidíš, kto kde sedel. Klikni na postavu, otvorí sa profil.</p>
+<p><b>Virtuálna trieda:</b> vidíš, kto kde sedel. Klikni na hlavu spolužiaka, otvorí sa jeho profil.</p>
 <input id="searchSeat" placeholder="Hľadaj meno" oninput="renderSeats()"><div id="virtual"></div>
-<h3>Tabuľkový zasadací poriadok</h3><div id="seatsTable"></div>
 <h3>Učitelia</h3><div id="teachers"></div></div></section>
 <section id="tabulka" class="hidden"><div class="card"><h2>Tabuľka spolužiakov</h2><p id="tableNote"></p><input placeholder="Hľadaj meno..." oninput="renderTable(this.value)"><div style="overflow:auto"><table><thead><tr><th>Meno</th><th>Priezvisko</th><th>Vydatá</th><th>Sedenie</th><th>Kontakt</th></tr></thead><tbody id="tbody"></tbody></table></div></div></section>
 <section id="historia" class="hidden"><div class="card"><h2>História</h2><div id="historyList">Načítavam...</div>
@@ -142,7 +160,7 @@ async function initSupabase(){
 }
 let CLASSMATES=[], EVENTS=[], HISTORY=[];
 let currentUser=null, myProfile=null, myRole='navstevnik';
-function show(id){document.querySelectorAll('main section').forEach(s=>s.classList.add('hidden'));document.getElementById(id).classList.remove('hidden');document.querySelectorAll('[data-nav]').forEach(b=>b.classList.toggle('active',b.getAttribute('data-nav')===id));}
+function show(id){document.querySelectorAll('main section').forEach(s=>s.classList.add('hidden'));document.getElementById(id).classList.remove('hidden');document.querySelectorAll('[data-nav]').forEach(b=>b.classList.toggle('active',b.getAttribute('data-nav')===id)); if(id==='trieda'&&typeof replayRoom==='function'){replayRoom();}}
 function fmtDate(d){if(!d)return'';const x=new Date(d+'T00:00:00');return String(x.getDate()).padStart(2,'0')+'.'+String(x.getMonth()+1).padStart(2,'0')+'.'+x.getFullYear();}
 function isDead(c){return c.stav==='už nežije';}
 function kriz(c){return isDead(c)?'✝'+(c.umrtie?' '+fmtDate(c.umrtie):''):'';}
@@ -157,7 +175,7 @@ async function loadAll(){
     ]);
     if(cm.error) throw cm.error; if(kt.error) throw kt.error; if(ev.error) throw ev.error; if(hi.error) throw hi.error;
     const K={}; (kt.data||[]).forEach(k=>{K[k.id]=k;}); cm.data=cm.data.map(r=>Object.assign({},r,K[r.id]||{}));
-    CLASSMATES=cm.data.map(r=>({id:r.id,meno:r.meno,priezvisko:r.priezvisko,'vydatá':r['vydatá']||'',dob:r.datum_narodenia||'',email:r.email||'',tel:r.telefon||'',wa:r.whatsapp||'',fb:r.facebook||'',stav:r.stav||'živý',umrtie:r.datum_umrtia||'',sedenie:(r.sedenie_rad?r.sedenie_rad+'. rad, miesto '+(r.sedenie_miesto||''):''),opravnenie:r.opravnenie||'Štandard',zaluby:r.zaluby||'',privacy_email:r.privacy_email,privacy_telefon:r.privacy_telefon}));
+    CLASSMATES=cm.data.map(r=>({id:r.id,meno:r.meno,priezvisko:r.priezvisko,'vydatá':r['vydatá']||'',dob:r.datum_narodenia||'',email:r.email||'',tel:r.telefon||'',wa:r.whatsapp||'',fb:r.facebook||'',stav:r.stav||'živý',umrtie:r.datum_umrtia||'',rad:r.sedenie_rad||0,mies:r.sedenie_miesto||0,sedenie:(r.sedenie_rad?r.sedenie_rad+'. rad, miesto '+(r.sedenie_miesto||''):''),opravnenie:r.opravnenie||'Štandard',zaluby:r.zaluby||'',privacy_email:r.privacy_email,privacy_telefon:r.privacy_telefon}));
     EVENTS=ev.data||[]; HISTORY=hi.data||[];
     document.getElementById('countClass').textContent=CLASSMATES.length;
     if(badge) badge.textContent='Načítané zo Supabase: '+CLASSMATES.length+' spolužiakov';
@@ -263,13 +281,48 @@ async function saveProfile(id){
   const {error}=await db.from('classmates').update(upd).eq('id',id);
   if(error) alert('Chyba: '+error.message); else {alert('Uložené.'); closeModal(); await loadAll();}
 }
+const LAYOUT_ANON=[[1,2,3,4,5,6],[1,2,3,4,5,6],[1,2,3,4,5,6],[1,2,3,4,5,6],[1,2,3,4,6],[2,3,6,7],[1,2]];
+const SVG_BACK='<svg viewBox="0 0 46 58" width="46" height="58"><path d="M3 58C3 40 12 32 23 32C34 32 43 40 43 58Z" fill="#5E6F5D"/><circle cx="23" cy="18" r="13" fill="#4A4036"/></svg>';
+function svgFront(c){const ini=((c.meno||'?')[0]+(c.priezvisko||'?')[0]).toUpperCase();return '<svg viewBox="0 0 46 58" width="46" height="58" style="transition:transform .2s"><path d="M3 58C3 40 12 32 23 32C34 32 43 40 43 58Z" fill="#8FA68E"/><circle cx="23" cy="18" r="13" fill="#F1E3D0" stroke="#C9B79C" stroke-width="1.5"/><text x="23" y="22" text-anchor="middle" font-family="Arial" font-weight="700" font-size="11" fill="#333">'+ini+'</text></svg>';}
+function roomHtml(rows,turned,q){
+  let idx=0;
+  let h='<div class="room'+(turned?' turned':'')+'"><div class="board">TABUĽA</div>';
+  rows.forEach(row=>{
+    h+='<div class="rrow">';
+    for(let g=0;g<4;g++){
+      h+='<div class="desk">';
+      (g===3?[7]:[g*2+1,g*2+2]).forEach(m=>{
+        const sd=row.find(x=>x.m===m);
+        if(!sd){h+='<div class="slot"></div>';return;}
+        const c=sd.c; idx++;
+        const dead=c&&isDead(c);
+        const hl=c&&q&&(c.meno+' '+c.priezvisko).toLowerCase().includes(q);
+        h+='<div class="slot"><div class="fig'+(dead?' dead':'')+(hl?' hl':'')+'" style="--d:'+(idx*0.035).toFixed(2)+'s"'+(c?' onclick="openProfileById(\''+c.id+'\')" title="'+c.meno+' '+c.priezvisko+'"':'')+'><div class="inner"><div class="face back">'+SVG_BACK+'</div><div class="face front">'+(c?svgFront(c)+'<div class="nm">'+c.priezvisko+'</div>'+(dead?'<span class="kz">✝</span>':''):SVG_BACK)+'</div></div></div></div>';
+      });
+      h+='</div>';
+    }
+    h+='</div>';
+  });
+  return h+'</div>';
+}
+function renderLoginRoom(){
+  const el=document.getElementById('loginRoom'); if(!el) return;
+  el.innerHTML=roomHtml(LAYOUT_ANON.map(r=>r.map(m=>({m}))),false,'')+'<p style="font-size:13px;color:var(--mut);text-align:center;margin:8px 0 16px">Trieda 4.B čaká. Prihlás sa a spolužiaci sa k tebe otočia.</p>';
+}
+function replayRoom(){
+  const r=document.querySelector('#virtual .room'); if(!r) return;
+  r.classList.remove('turned'); void r.offsetWidth; setTimeout(()=>r.classList.add('turned'),350);
+}
+function openProfileById(id){const c=CLASSMATES.find(x=>x.id===id); if(c) openProfile(c);}
 function renderSeats(){
   const q=(document.getElementById('searchSeat')?.value||'').toLowerCase();
   const v=document.getElementById('virtual'); if(!v) return;
-  let html='<p style="font-size:13px">Tabuľa je vpredu. Klikni na postavu.</p><div class="grid">';
-  CLASSMATES.forEach(c=>{const hl=(c.meno+' '+c.priezvisko).toLowerCase().includes(q)&&q; html+='<div class="seat '+(isDead(c)?'dead':'')+'" style="'+(hl?'outline:3px solid var(--sage)':'')+'" onclick="openProfileByName(\''+c.meno+' '+c.priezvisko+'\')">'+(isDead(c)?'<span class="ribbon">'+kriz(c)+'</span><br>':'')+'<b>'+c.meno+' '+c.priezvisko+'</b><br><span style="font-size:12px">'+(c.sedenie||'')+'</span></div>';});
-  html+='</div>'; v.innerHTML=html;
-  document.getElementById('seatsTable').innerHTML='<div class="grid">'+CLASSMATES.map(c=>'<div class="seat '+(isDead(c)?'dead':'')+'">'+c.sedenie+' - '+c.meno+' '+c.priezvisko+'</div>').join('')+'</div>';
+  const rows=[]; const loose=[];
+  CLASSMATES.forEach(c=>{
+    if(c.rad>0&&c.mies>0&&c.mies<=7){ (rows[c.rad-1]=rows[c.rad-1]||[]).push({m:c.mies,c}); } else loose.push(c);
+  });
+  const n=Math.max(rows.length,7); for(let i=0;i<n;i++){ rows[i]=rows[i]||[]; }
+  v.innerHTML=roomHtml(rows,true,q)+(loose.length?'<h3>Bez určeného miesta</h3>'+loose.map(c=>'<span class="chip" onclick="openProfileById(\''+c.id+'\')">'+c.meno+' '+c.priezvisko+(isDead(c)?' ✝':'')+'</span>').join(''):'');
   document.getElementById('teachers').innerHTML=['Gruniková - učiteľka','Tarajová Skladanová - učiteľka','Eva Králová - učiteľka'].map(x=>'<span class="badge">'+x+'</span>').join(' ');
 }
 function openProfileByName(n){const c=CLASSMATES.find(x=>x.meno+' '+x.priezvisko===n); if(c) openProfile(c);}
@@ -305,5 +358,6 @@ async function savePhoto(){
 }
 document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeModal();}});
 initSupabase();
+renderLoginRoom();
 </script>
 </body></html>
