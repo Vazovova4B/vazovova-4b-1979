@@ -253,7 +253,7 @@ function renderEvents(){
   const el=document.getElementById('eventsList'); if(!EVENTS.length){el.innerHTML='Zatiaľ žiadne stretnutia.';return;}
   const future=EVENTS.filter(e=>new Date(e.datum)>=new Date(new Date().toISOString().slice(0,10)));
   const next=future[0]||EVENTS[EVENTS.length-1];
-  document.getElementById('nextEvent').innerHTML='<b>'+fmtDate(next.datum)+'</b> o <b>'+(next.cas||'17:00').slice(0,5)+'</b> • '+(next.miesto||'')+' • '+(next.popis||'')+'<div class="row" style="margin-top:8px"><button class="btn" onclick="openMail()">Potvrdiť účasť</button></div>';
+  document.getElementById('nextEvent').innerHTML='<b>'+fmtDate(next.datum)+'</b> o <b>'+(next.cas||'17:00').slice(0,5)+'</b> • '+(next.miesto||'')+' • '+(next.popis||'')+'<div class="row" style="margin-top:8px">'+((myRole==='Admin'||myRole==='Editor')?'<button class="btn" onclick="openMail()">Pripraviť pozvánku e-mailom</button>':'')+'</div>';
   el.innerHTML=EVENTS.map(e=>'<div class="card"><b>'+fmtDate(e.datum)+'</b> o '+(e.cas||'').slice(0,5)+' • '+e.miesto+'<p>'+(e.popis||'')+'</p>'+(e.gps?'<button class="btn2" onclick="window.open(\'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(e.gps)+'\',\'_blank\')">Pozrieť v mapách / Kopírovať GPS</button>':'')+'</div>').join('');
 }
 function renderHistory(){document.getElementById('historyList').innerHTML=HISTORY.length?HISTORY.map(h=>'<div class="card"><b>'+fmtDate(h.datum)+'</b> • '+(h.miesto||'')+'<p>'+(h.popis||'')+'</p></div>').join(''):'Zatiaľ žiadna história.';}
