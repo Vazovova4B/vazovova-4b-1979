@@ -114,8 +114,8 @@ body.anon [data-nav]{display:none}
 <div class="row"><button class="btn" onclick="saveEvent()">Uložiť stretnutie</button><button class="btn2" onclick="openMaps()">Pozrieť v Google mapách</button><button class="btn2" onclick="openMail()">Poslať pozvánku mailom všetkým</button></div></div></div></section>
 <section id="galeria" class="hidden"><div class="card"><h2>Galéria - Google Drive</h2>
 <p>Náš archív: 15 GB na Google Drive</p>
-<div class="row"><a class="btn" style="text-decoration:none" href="https://drive.google.com/drive/folders/1n7DXaUsYBZVba99rD4LtKKbbnZLWC61h" target="_blank" rel="noopener">Otvoriť hlavný archív v Google Drive</a>
-<a class="btn2" style="text-decoration:none" href="https://drive.google.com/drive/folders/1Elwg5xzr0gGvwvpMRYvMCuz1puSyxHX0" target="_blank" rel="noopener">Otvoriť album 13.11.2026</a></div>
+<div class="row"><a id="linkArchiv" class="btn hidden" style="text-decoration:none" href="#" target="_blank" rel="noopener">Otvoriť hlavný archív v Google Drive</a>
+<a id="linkAlbum" class="btn2 hidden" style="text-decoration:none" href="#" target="_blank" rel="noopener">Otvoriť album 13.11.2026</a></div>
 <h3>Album: Stretávka 13.11.2026</h3><div class="grid" id="gallery"></div></div></section>
 <section id="trieda" class="hidden"><div class="card"><h2>Naša trieda</h2>
 <p><b>Virtuálna trieda:</b> vidíš, kto kde sedel. Klikni na hlavu spolužiaka, otvorí sa jeho profil.</p>
@@ -169,7 +169,19 @@ function show(id){document.querySelectorAll('main section').forEach(s=>s.classLi
 function fmtDate(d){if(!d)return'';const x=new Date(d+'T00:00:00');return String(x.getDate()).padStart(2,'0')+'.'+String(x.getMonth()+1).padStart(2,'0')+'.'+x.getFullYear();}
 function isDead(c){return c.stav==='už nežije';}
 function kriz(c){return isDead(c)?'✝'+(c.umrtie?' '+fmtDate(c.umrtie):''):'';}
+async function loadSettings(){
+  try{
+    const r=await db.from('nastavenia').select('kluc,hodnota');
+    const m={}; (r.data||[]).forEach(x=>{m[x.kluc]=x.hodnota;});
+    [['linkArchiv','archiv_url'],['linkAlbum','album_url']].forEach(([id,k])=>{
+      const a=document.getElementById(id); if(!a) return;
+      if(m[k]){a.href=m[k]; a.classList.remove('hidden');} else {a.href='#'; a.classList.add('hidden');}
+    });
+  }catch(e){}
+}
+function clearSettings(){['linkArchiv','linkAlbum'].forEach(id=>{const a=document.getElementById(id); if(a){a.href='#'; a.classList.add('hidden');}});}
 async function loadAll(){
+  loadSettings();
   if(!db) return;
   const badge=document.getElementById('dbStatus');
   try{
@@ -209,6 +221,7 @@ async function refreshAuth(){
 function applyGate(){
   const member=!!myProfile;
   document.body.classList.toggle('anon',!member);
+  if(!member){ clearSettings(); }
   const cur=[...document.querySelectorAll('main section')].find(x=>!x.classList.contains('hidden'));
   const curId=cur?cur.id:'';
   if(!member){
