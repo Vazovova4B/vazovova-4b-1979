@@ -83,7 +83,7 @@ body.anon [data-nav]{display:none}
 <div class="card"><h2>Najbližšie stretnutie</h2><div id="nextEvent">Načítavam...</div></div>
 <div class="card"><h2>Posledné fotky</h2><p style="font-size:13px;color:var(--mut)">Fotky sú v Google Drive.</p><div class="grid" id="lastPhotos"></div></div>
 </section>
-<section id="login"><div class="card"><div id="loginRoom"></div><h2>Prihlásenie</h2>
+<section id="login"><div class="card"><h2>Prihlásenie</h2>
 <p id="loginInfo" style="font-size:13px;color:var(--mut)"></p>
 <label>Email</label><input id="loginEmail" type="email" placeholder="tvoj@email.sk">
 <label>Heslo</label><input id="loginPass" type="password" placeholder="Heslo">
@@ -401,6 +401,5 @@ async function savePhoto(){
 }
 document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeModal();}});
 initSupabase();
-renderLoginRoom();
 </script>
 </body></html>
