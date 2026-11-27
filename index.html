@@ -31,7 +31,7 @@ input,select,textarea{width:100%;padding:10px;border:1px solid var(--line);borde
 
 .room{background:linear-gradient(#F6F0E6,#E8DECC);border:1px solid var(--line);border-radius:16px;padding:12px 10px 14px}
 .board{background:#2F4A3A;color:#EAF1EA;text-align:center;border-radius:6px;padding:6px;font-size:12px;letter-spacing:.2em;margin:0 6% 14px;border:3px solid #8A6B45}
-.rrow{display:grid;grid-template-columns:1fr 1fr 1fr .5fr;gap:8px;margin-bottom:6px}
+.rrow{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:6px}
 .desk{display:flex;justify-content:center;position:relative;padding-bottom:12px}
 .desk::after{content:"";position:absolute;left:3%;right:3%;bottom:0;height:9px;background:#C9B79C;border-radius:4px;box-shadow:0 2px 0 #A9946F}
 .slot{flex:1;display:flex;justify-content:center;min-width:0}
@@ -46,6 +46,11 @@ input,select,textarea{width:100%;padding:10px;border:1px solid var(--line);borde
 .fig .kz{position:absolute;top:-2px;right:-1px;font-size:11px;background:#111;color:#fff;border-radius:6px;padding:0 3px;line-height:14px}
 .fig.hl .front{outline:3px solid var(--sage);border-radius:10px}
 .fig:hover .front svg{transform:scale(1.06)}
+.fig.sel .front{outline:3px solid #C0392B;border-radius:10px}
+.ph{width:40px;height:40px;border:2px dashed #C9B79C;border-radius:50%;margin-top:16px}
+.slot.over .ph,.slot.over .fig .front{outline:3px dashed var(--sage);border-radius:10px}
+.editing .slot{cursor:pointer}
+.chip.sel{outline:3px solid #C0392B}
 .chip{display:inline-block;border:1px solid var(--line);background:#fff;border-radius:999px;padding:5px 10px;margin:3px;font-size:13px;cursor:pointer}
 body.anon [data-nav]{display:none}
 @media(max-width:640px){h1{font-size:32px}}
@@ -281,23 +286,30 @@ async function saveProfile(id){
   const {error}=await db.from('classmates').update(upd).eq('id',id);
   if(error) alert('Chyba: '+error.message); else {alert('Uložené.'); closeModal(); await loadAll();}
 }
-const LAYOUT_ANON=[[1,2,3,4,5,6],[1,2,3,4,5,6],[1,2,3,4,5,6],[1,2,3,4,5,6],[1,2,3,4,6],[2,3,6,7],[1,2]];
+const LAYOUT_ANON=[[1,2,3,4,5,6],[1,2,3,4,5,6],[1,2,3,4,5,6],[1,2,3,4,5,6],[1,2,3,4,6],[1,2,5,6],[1,2]];
 const SVG_BACK='<svg viewBox="0 0 46 58" width="46" height="58"><path d="M3 58C3 40 12 32 23 32C34 32 43 40 43 58Z" fill="#5E6F5D"/><circle cx="23" cy="18" r="13" fill="#4A4036"/></svg>';
+let EDIT_SEATS=false, SEL_ID=null;
 function svgFront(c){const ini=((c.meno||'?')[0]+(c.priezvisko||'?')[0]).toUpperCase();return '<svg viewBox="0 0 46 58" width="46" height="58" style="transition:transform .2s"><path d="M3 58C3 40 12 32 23 32C34 32 43 40 43 58Z" fill="#8FA68E"/><circle cx="23" cy="18" r="13" fill="#F1E3D0" stroke="#C9B79C" stroke-width="1.5"/><text x="23" y="22" text-anchor="middle" font-family="Arial" font-weight="700" font-size="11" fill="#333">'+ini+'</text></svg>';}
-function roomHtml(rows,turned,q){
+function seatText(c){return c.rad?(c.rad+'. rad, miesto '+(c.mies||'')):'';}
+function roomHtml(rows,turned,q,edit){
   let idx=0;
-  let h='<div class="room'+(turned?' turned':'')+'"><div class="board">TABUĽA</div>';
-  rows.forEach(row=>{
+  let h='<div class="room'+(turned?' turned':'')+(edit?' editing':'')+'"><div class="board">TABUĽA</div>';
+  rows.forEach((row,ri)=>{
     h+='<div class="rrow">';
-    for(let g=0;g<4;g++){
+    for(let g=0;g<3;g++){
       h+='<div class="desk">';
-      (g===3?[7]:[g*2+1,g*2+2]).forEach(m=>{
+      [g*2+1,g*2+2].forEach(m=>{
         const sd=row.find(x=>x.m===m);
-        if(!sd){h+='<div class="slot"></div>';return;}
+        const attrs=edit?' data-r="'+(ri+1)+'" data-m="'+m+'" onclick="slotClick('+(ri+1)+','+m+')" ondragover="event.preventDefault();this.classList.add(\'over\')" ondragleave="this.classList.remove(\'over\')" ondrop="dropOn(event,'+(ri+1)+','+m+')"':'';
+        if(!sd){h+='<div class="slot"'+attrs+'>'+(edit?'<div class="ph"></div>':'')+'</div>';return;}
         const c=sd.c; idx++;
         const dead=c&&isDead(c);
         const hl=c&&q&&(c.meno+' '+c.priezvisko).toLowerCase().includes(q);
-        h+='<div class="slot"><div class="fig'+(dead?' dead':'')+(hl?' hl':'')+'" style="--d:'+(idx*0.035).toFixed(2)+'s"'+(c?' onclick="openProfileById(\''+c.id+'\')" title="'+c.meno+' '+c.priezvisko+'"':'')+'><div class="inner"><div class="face back">'+SVG_BACK+'</div><div class="face front">'+(c?svgFront(c)+'<div class="nm">'+c.priezvisko+'</div>'+(dead?'<span class="kz">✝</span>':''):SVG_BACK)+'</div></div></div></div>';
+        const sel=c&&edit&&SEL_ID===c.id;
+        let figAttr='';
+        if(c&&edit){figAttr=' draggable="true" ondragstart="dragStart(event,\''+c.id+'\')" title="'+c.meno+' '+c.priezvisko+'"';}
+        else if(c){figAttr=' onclick="openProfileById(\''+c.id+'\')" title="'+c.meno+' '+c.priezvisko+'"';}
+        h+='<div class="slot"'+attrs+'><div class="fig'+(dead?' dead':'')+(hl?' hl':'')+(sel?' sel':'')+'" style="--d:'+(idx*0.035).toFixed(2)+'s"'+figAttr+'><div class="inner"><div class="face back">'+SVG_BACK+'</div><div class="face front">'+(c?svgFront(c)+'<div class="nm">'+c.priezvisko+'</div>'+(dead?'<span class="kz">✝</span>':''):SVG_BACK)+'</div></div></div></div>';
       });
       h+='</div>';
     }
@@ -307,22 +319,53 @@ function roomHtml(rows,turned,q){
 }
 function renderLoginRoom(){
   const el=document.getElementById('loginRoom'); if(!el) return;
-  el.innerHTML=roomHtml(LAYOUT_ANON.map(r=>r.map(m=>({m}))),false,'')+'<p style="font-size:13px;color:var(--mut);text-align:center;margin:8px 0 16px">Trieda 4.B čaká. Prihlás sa a spolužiaci sa k tebe otočia.</p>';
+  el.innerHTML=roomHtml(LAYOUT_ANON.map(r=>r.map(m=>({m}))),false,'',false)+'<p style="font-size:13px;color:var(--mut);text-align:center;margin:8px 0 16px">Trieda 4.B čaká. Prihlás sa a spolužiaci sa k tebe otočia.</p>';
 }
 function replayRoom(){
   const r=document.querySelector('#virtual .room'); if(!r) return;
   r.classList.remove('turned'); void r.offsetWidth; setTimeout(()=>r.classList.add('turned'),350);
 }
 function openProfileById(id){const c=CLASSMATES.find(x=>x.id===id); if(c) openProfile(c);}
+function toggleEditSeats(){EDIT_SEATS=!EDIT_SEATS; SEL_ID=null; renderSeats();}
+function selectSeat(id){SEL_ID=(SEL_ID===id)?null:id; renderSeats();}
+function dragStart(ev,id){SEL_ID=id; try{ev.dataTransfer.setData('text/plain',id);ev.dataTransfer.effectAllowed='move';}catch(e){}}
+function dropOn(ev,rad,mies){ev.preventDefault(); const id=SEL_ID||(ev.dataTransfer&&ev.dataTransfer.getData('text/plain')); if(id){moveSeat(id,rad,mies);}}
+function slotClick(rad,mies){
+  const here=CLASSMATES.find(x=>x.rad===rad&&x.mies===mies);
+  if(!SEL_ID){ if(here){SEL_ID=here.id; renderSeats();} return; }
+  if(here&&here.id===SEL_ID){SEL_ID=null; renderSeats(); return;}
+  moveSeat(SEL_ID,rad,mies);
+}
+async function moveSeat(id,rad,mies){
+  const c=CLASSMATES.find(x=>x.id===id); if(!c||myRole!=='Admin') return;
+  const other=CLASSMATES.find(x=>x.rad===rad&&x.mies===mies&&x.id!==id);
+  const oldR=c.rad||null, oldM=c.mies||null;
+  const ops=[db.from('classmates').update({sedenie_rad:rad,sedenie_miesto:mies}).eq('id',id).select('id')];
+  if(other){ ops.push(db.from('classmates').update({sedenie_rad:oldR,sedenie_miesto:oldM}).eq('id',other.id).select('id')); }
+  const res=await Promise.all(ops);
+  const bad=res.find(r=>r.error||!r.data||r.data.length!==1);
+  if(bad){ alert('Nepodarilo sa uložiť zmenu miesta'+(bad.error?': '+bad.error.message:'. Skontroluj, či si prihlásený ako Admin.')); SEL_ID=null; await loadAll(); return; }
+  c.rad=rad; c.mies=mies; c.sedenie=seatText(c);
+  if(other){ other.rad=oldR||0; other.mies=oldM||0; other.sedenie=seatText(other); }
+  SEL_ID=null; renderSeats(); renderTable();
+}
 function renderSeats(){
   const q=(document.getElementById('searchSeat')?.value||'').toLowerCase();
   const v=document.getElementById('virtual'); if(!v) return;
+  const edit=EDIT_SEATS&&myRole==='Admin';
   const rows=[]; const loose=[];
   CLASSMATES.forEach(c=>{
-    if(c.rad>0&&c.mies>0&&c.mies<=7){ (rows[c.rad-1]=rows[c.rad-1]||[]).push({m:c.mies,c}); } else loose.push(c);
+    if(c.rad>0&&c.mies>0&&c.mies<=6){ (rows[c.rad-1]=rows[c.rad-1]||[]).push({m:c.mies,c}); } else loose.push(c);
   });
   const n=Math.max(rows.length,7); for(let i=0;i<n;i++){ rows[i]=rows[i]||[]; }
-  v.innerHTML=roomHtml(rows,true,q)+(loose.length?'<h3>Bez určeného miesta</h3>'+loose.map(c=>'<span class="chip" onclick="openProfileById(\''+c.id+'\')">'+c.meno+' '+c.priezvisko+(isDead(c)?' ✝':'')+'</span>').join(''):'');
+  let h='';
+  if(myRole==='Admin'){
+    h+='<div style="margin:6px 0"><button class="btn2" style="width:auto" onclick="toggleEditSeats()">'+(edit?'Hotovo - ukončiť úpravy':'Upraviť rozloženie')+'</button></div>';
+    if(edit){ h+='<p style="font-size:13px;color:var(--mut)">Presuň spolužiaka ťahaním na iné miesto, alebo klikni na neho a potom na lavicu. Na obsadené miesto = vymenia sa.</p>'; }
+  }
+  h+=roomHtml(rows,true,q,edit);
+  if(loose.length){ h+='<h3>Bez určeného miesta</h3>'+loose.map(c=>'<span class="chip'+(edit&&SEL_ID===c.id?' sel':'')+'"'+(edit?' draggable="true" ondragstart="dragStart(event,\''+c.id+'\')" onclick="selectSeat(\''+c.id+'\')"':' onclick="openProfileById(\''+c.id+'\')"')+'>'+c.meno+' '+c.priezvisko+(isDead(c)?' ✝':'')+'</span>').join(''); }
+  v.innerHTML=h;
   document.getElementById('teachers').innerHTML=['Gruniková - učiteľka','Tarajová Skladanová - učiteľka','Eva Králová - učiteľka'].map(x=>'<span class="badge">'+x+'</span>').join(' ');
 }
 function openProfileByName(n){const c=CLASSMATES.find(x=>x.meno+' '+x.priezvisko===n); if(c) openProfile(c);}
