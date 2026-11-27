@@ -81,7 +81,7 @@ body.anon [data-nav]{display:none}
 <div class="row"><button class="btn" onclick="show('stretnutia')">Pozrieť stretnutia →</button><button class="btn2" onclick="show('trieda')">Nájsť spolužiaka</button></div>
 <p><b id="countClass">37</b> spolužiakov &nbsp;•&nbsp; <b>10</b> učiteľov &nbsp;•&nbsp; <b>348+</b> fotiek v archíve</p></div>
 <div class="card"><h2>Najbližšie stretnutie</h2><div id="nextEvent">Načítavam...</div></div>
-<div class="card"><h2>Posledné fotky</h2><p style="font-size:13px;color:var(--mut)">Fotky sú v Google Drive.</p><div class="grid" id="lastPhotos"></div></div>
+<div class="card"><h2>Posledné fotky</h2><p style="font-size:13px;color:var(--mut)">Najnovšie fotky pridané na stránku.</p><div class="grid" id="lastPhotos"></div></div>
 </section>
 <section id="login"><div class="card"><h2>Prihlásenie</h2>
 <p id="loginInfo" style="font-size:13px;color:var(--mut)"></p>
@@ -112,11 +112,11 @@ body.anon [data-nav]{display:none}
 <label>Miesto / GPS - napr. 48.1486, 17.1077 alebo Leberfinger, Bratislava</label><input id="evPlace">
 <label>Popis</label><textarea id="evDesc"></textarea>
 <div class="row"><button class="btn" onclick="saveEvent()">Uložiť stretnutie</button><button class="btn2" onclick="openMaps()">Pozrieť v Google mapách</button><button class="btn2" onclick="openMail()">Poslať pozvánku mailom všetkým</button></div></div></div></section>
-<section id="galeria" class="hidden"><div class="card"><h2>Galéria - Google Drive</h2>
+<section id="galeria" class="hidden"><div class="card"><h2>Galéria</h2>
 <p>Náš archív: 15 GB na Google Drive</p>
 <div class="row"><a id="linkArchiv" class="btn hidden" style="text-decoration:none" href="#" target="_blank" rel="noopener">Otvoriť hlavný archív v Google Drive</a>
 <a id="linkAlbum" class="btn2 hidden" style="text-decoration:none" href="#" target="_blank" rel="noopener">Otvoriť album 13.11.2026</a></div>
-<h3>Album: Stretávka 13.11.2026</h3><div class="grid" id="gallery"></div></div></section>
+<h3>Fotky zo stránky</h3><div id="gallery"></div></div></section>
 <section id="trieda" class="hidden"><div class="card"><h2>Naša trieda</h2>
 <p><b>Virtuálna trieda:</b> vidíš, kto kde sedel. Klikni na hlavu spolužiaka, otvorí sa jeho profil.</p>
 <input id="searchSeat" placeholder="Hľadaj meno" oninput="renderSeats()"><div id="virtual"></div>
@@ -124,10 +124,14 @@ body.anon [data-nav]{display:none}
 <section id="tabulka" class="hidden"><div class="card"><h2>Tabuľka spolužiakov</h2><p id="tableNote"></p><input placeholder="Hľadaj meno..." oninput="renderTable(this.value)"><div style="overflow:auto"><table><thead><tr><th>Meno</th><th>Priezvisko</th><th>Vydatá</th><th>Sedenie</th><th>Kontakt</th></tr></thead><tbody id="tbody"></tbody></table></div></div></section>
 <section id="historia" class="hidden"><div class="card"><h2>História</h2><div id="historyList">Načítavam...</div>
 <div id="historyForm" class="hidden"><h3>Pridať minulú akciu (Editor / Admin)</h3><label>Dátum</label><input type="date" id="hDate"><label>Miesto</label><input id="hPlace"><label>Popis</label><textarea id="hDesc"></textarea><button class="btn" onclick="addHistory()">Pridať</button></div></div></section>
-<section id="nahrat" class="hidden"><div class="card"><h2>Nahrať fotky</h2><p>Pre dôchodcov - jednoducho: stlač, vyber fotky, ulož.</p>
-<label class="btn" style="display:inline-block;text-align:center">📷 NAHRAŤ FOTKY Z MOBILU<input type="file" id="fileInput" accept="image/*" multiple style="display:none" onchange="previewFiles(this)"></label>
-<div class="grid" id="preview"></div><p style="font-size:13px">Fotka sa uloží ako záznam do Supabase (odkaz). Samotné súbory ostávajú v Google Drive - po výbere fotiek ich nahraj aj do Drive priečinka 13.11.2026 a sem vlož odkaz.</p>
-<label>Odkaz na fotku v Drive / popis</label><input id="photoUrl" placeholder="Drive odkaz alebo popis"><button class="btn" onclick="savePhoto()">Uložiť odkaz na fotku</button></div></section>
+<section id="nahrat" class="hidden"><div class="card"><h2>Nahrať fotky</h2><p>Jednoducho: vyber fotky, napíš názov albumu a stlač Uložiť. Môžeš vybrať aj viac fotiek naraz.</p>
+<label>Názov albumu</label><input id="albumName" value="Stretávka 13.11.2026">
+<label>Poznámka (nepovinné)</label><input id="photoNote" placeholder="Napr. pri večeri">
+<label class="btn" style="display:inline-block;text-align:center;margin:10px 0">📷 VYBRAŤ FOTKY<input type="file" id="fileInput" accept="image/*" multiple style="display:none" onchange="previewFiles(this)"></label>
+<div class="grid" id="preview" style="grid-template-columns:repeat(auto-fill,minmax(90px,1fr))"></div>
+<p id="uploadMsg" style="font-size:14px"></p>
+<button class="btn" id="uploadBtn" onclick="uploadPhotos()">Uložiť fotky</button>
+<p style="font-size:13px;color:var(--mut)">Fotky sa pred nahraním zmenšia, aby sa nahrali rýchlo. Vidia ich len prihlásení spolužiaci.</p></div></section>
 <section id="odkazy" class="hidden"><div class="card"><h2>Odkazy</h2><p>Zosnulí (✝) sa automaticky nezobrazujú v príjemcoch.</p>
 <div class="row"><a class="btn2" style="text-decoration:none" href="https://facebook.com" target="_blank" rel="noopener">Facebook</a><a class="btn2" style="text-decoration:none" href="https://instagram.com" target="_blank" rel="noopener">Instagram</a><a class="btn2" style="text-decoration:none" href="https://youtube.com" target="_blank" rel="noopener">YouTube</a><a class="btn2" style="text-decoration:none" href="https://whatsapp.com" target="_blank" rel="noopener">WhatsApp</a></div>
 <h3>Napísať odkaz</h3><div id="recipients" style="max-height:180px;overflow:auto;border:1px solid var(--line);border-radius:12px;padding:10px"></div>
@@ -165,7 +169,7 @@ async function initSupabase(){
 }
 let CLASSMATES=[], EVENTS=[], HISTORY=[];
 let currentUser=null, myProfile=null, myRole='navstevnik';
-function show(id){document.querySelectorAll('main section').forEach(s=>s.classList.add('hidden'));document.getElementById(id).classList.remove('hidden');document.querySelectorAll('[data-nav]').forEach(b=>b.classList.toggle('active',b.getAttribute('data-nav')===id)); if(id==='trieda'&&typeof replayRoom==='function'){replayRoom();}}
+function show(id){document.querySelectorAll('main section').forEach(s=>s.classList.add('hidden'));document.getElementById(id).classList.remove('hidden');document.querySelectorAll('[data-nav]').forEach(b=>b.classList.toggle('active',b.getAttribute('data-nav')===id)); if(id==='trieda'&&typeof replayRoom==='function'){replayRoom();} if(id==='galeria'&&typeof loadGallery==='function'){loadGallery();}}
 function fmtDate(d){if(!d)return'';const x=new Date(d+'T00:00:00');return String(x.getDate()).padStart(2,'0')+'.'+String(x.getMonth()+1).padStart(2,'0')+'.'+x.getFullYear();}
 function isDead(c){return c.stav==='už nežije';}
 function kriz(c){return isDead(c)?'✝'+(c.umrtie?' '+fmtDate(c.umrtie):''):'';}
@@ -221,7 +225,7 @@ async function refreshAuth(){
 function applyGate(){
   const member=!!myProfile;
   document.body.classList.toggle('anon',!member);
-  if(!member){ clearSettings(); }
+  if(!member){ clearSettings(); clearGallery(); }
   const cur=[...document.querySelectorAll('main section')].find(x=>!x.classList.contains('hidden'));
   const curId=cur?cur.id:'';
   if(!member){
@@ -387,11 +391,6 @@ function renderTable(q=''){
   document.getElementById('tbody').innerHTML=rows.map(c=>'<tr style="'+(isDead(c)?'background:#F0F0F0':'')+'"><td>'+c.meno+'</td><td>'+c.priezvisko+(isDead(c)?' '+kriz(c):'')+'</td><td>'+(c['vydatá']||'')+'</td><td>'+(c.sedenie||'')+'</td><td>'+(canSeeContact(c)?(c.email||'-'):'len pre prihlásených')+'</td></tr>').join('');
   document.getElementById('tableNote').textContent=myRole==='navstevnik'?'Neprihlásený: vidíš len mená a sedenie, bez kontaktov a fotiek.':'Prihlásený: vidíš kontakty.';
 }
-function renderPhotos(){
-  const imgs=['https://images.unsplash.com/photo-1529156069898-49953e39b3ac?w=600','https://images.unsplash.com/photo-1511632765486-a01980e01a18?w=600'];
-  document.getElementById('lastPhotos').innerHTML=imgs.map(u=>'<img src="'+u+'" style="width:100%;border-radius:12px">').join('');
-  document.getElementById('gallery').innerHTML=imgs.map(u=>'<img src="'+u+'" style="width:100%;border-radius:12px">').join('');
-}
 function renderRecipients(){
   document.getElementById('recipients').innerHTML=CLASSMATES.filter(c=>!isDead(c)).map(c=>'<label style="display:block"><input type="checkbox" class="rec" value="'+c.email+'"> '+c.meno+' '+c.priezvisko+'</label>').join('');
 }
@@ -405,12 +404,87 @@ async function sendMsg(){
 }
 function openMail(){const to=CLASSMATES.filter(c=>!isDead(c)&&c.email).map(c=>c.email).join(','); const subj=encodeURIComponent('Pozvánka: Stretnutie 4.B Vazovova 1979'); const body=encodeURIComponent('Milí spolužiaci,\n\nsrdečne vás pozývame na stretnutie 4.B - 20.06.2027 o 17:00, Reštaurácia Leberfinger, Bratislava.\n\nTešíme sa na vás!\n4.B Vazovova 1979'); window.location.href='mailto:?bcc='+encodeURIComponent(to)+'&subject='+subj+'&body='+body;}
 function openMaps(){const q=document.getElementById('evPlace')?.value||'Leberfinger, Bratislava'; window.open('https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(q),'_blank');}
-function previewFiles(inp){const p=document.getElementById('preview'); p.innerHTML=''; [...inp.files].forEach(f=>{const r=new FileReader(); r.onload=e=>{p.innerHTML+='<div><img src="'+e.target.result+'" style="width:100%;border-radius:12px"><p>'+f.name+'</p></div>'}; r.readAsDataURL(f);});}
-async function savePhoto(){
-  if(myRole==='navstevnik'){alert('Fotky môže pridať len prihlásený.');return;}
-  const url=document.getElementById('photoUrl').value;
-  const {error}=await db.from('photos').insert([{album:'13.11.2026',drive_url:url,popis:'Nahraté zo stránky',autor:currentUser?.email||''}]);
-  if(error) alert('Chyba: '+error.message); else alert('Odkaz na fotku uložený.');
+function esc(t){return String(t==null?'':t).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+let GAL=[], GAL_URLS={}, GAL_SHOWN=60;
+function renderPhotos(){ loadGallery(); }
+async function loadGallery(){
+  if(!myProfile||!db) return;
+  const r=await db.from('galeria').select('id,cesta,nahlad,album,popis,autor,created_at').order('created_at',{ascending:false}).limit(500);
+  GAL=r.data||[];
+  const paths=GAL.slice(0,GAL_SHOWN).map(x=>x.nahlad);
+  GAL_URLS={};
+  if(paths.length){
+    const s=await db.storage.from('fotky').createSignedUrls(paths,3600);
+    (s.data||[]).forEach(x=>{ if(x.signedUrl){ GAL_URLS[x.path]=x.signedUrl; } });
+  }
+  renderGallery();
+}
+function renderGallery(){
+  const g=document.getElementById('gallery'), l=document.getElementById('lastPhotos');
+  if(!g||!l) return;
+  if(!GAL.length){ g.innerHTML='<p style="color:var(--mut)">Zatiaľ tu nie sú žiadne fotky. Pridaj prvé cez Nahrať fotky.</p>'; l.innerHTML=''; return; }
+  const tile=x=>GAL_URLS[x.nahlad]?'<img src="'+GAL_URLS[x.nahlad]+'" loading="lazy" alt="" style="width:100%;aspect-ratio:1;object-fit:cover;border-radius:12px;cursor:pointer" onclick="openPhoto(\''+x.id+'\')">':'';
+  l.innerHTML=GAL.slice(0,4).map(tile).join('');
+  const groups={}; GAL.slice(0,GAL_SHOWN).forEach(x=>{const a=x.album||'Bez albumu'; (groups[a]=groups[a]||[]).push(x);});
+  g.innerHTML=Object.keys(groups).map(a=>'<h3>'+esc(a)+'</h3><div class="grid" style="grid-template-columns:repeat(auto-fill,minmax(110px,1fr))">'+groups[a].map(tile).join('')+'</div>').join('')+(GAL.length>GAL_SHOWN?'<div style="margin-top:10px"><button class="btn2" onclick="GAL_SHOWN+=60;loadGallery()">Zobraziť ďalšie</button></div>':'');
+}
+function clearGallery(){ GAL=[]; GAL_URLS={}; const g=document.getElementById('gallery'), l=document.getElementById('lastPhotos'); if(g) g.innerHTML=''; if(l) l.innerHTML=''; }
+async function openPhoto(id){
+  const x=GAL.find(y=>y.id===id); if(!x) return;
+  const s=await db.storage.from('fotky').createSignedUrl(x.cesta,3600);
+  const url=s.data&&s.data.signedUrl; if(!url) return;
+  document.getElementById('modalRoot').innerHTML='<div class="modal" onclick="if(event.target===this)closeModal()"><div><button class="x" onclick="closeModal()">×</button><img src="'+url+'" alt="" style="max-width:100%;border-radius:12px"><p style="font-size:13px">'+esc(x.album||'')+(x.popis?' - '+esc(x.popis):'')+'<br>Pridal(a): '+esc(x.autor||'')+' • '+fmtDate((x.created_at||'').slice(0,10))+'</p>'+(myRole==='Admin'?'<button class="btn2" onclick="deletePhoto(\''+x.id+'\')">Zmazať fotku</button>':'')+'</div></div>';
+}
+async function deletePhoto(id){
+  const x=GAL.find(y=>y.id===id); if(!x||myRole!=='Admin') return;
+  if(!confirm('Naozaj zmazať túto fotku?')) return;
+  const d=await db.from('galeria').delete().eq('id',id).select('id');
+  if(d.error||!d.data||d.data.length!==1){ alert('Fotku sa nepodarilo zmazať.'); return; }
+  await db.storage.from('fotky').remove([x.cesta,x.nahlad]);
+  closeModal(); loadGallery();
+}
+async function resizeToBlob(file,maxSide,quality){
+  let bmp;
+  try{ bmp=await createImageBitmap(file,{imageOrientation:'from-image'}); }
+  catch(e){ bmp=await new Promise((res,rej)=>{const im=new Image(); im.onload=()=>res(im); im.onerror=rej; im.src=URL.createObjectURL(file);}); }
+  const w=bmp.width||bmp.naturalWidth, h=bmp.height||bmp.naturalHeight;
+  const k=Math.min(1,maxSide/Math.max(w,h));
+  const cv=document.createElement('canvas'); cv.width=Math.round(w*k); cv.height=Math.round(h*k);
+  cv.getContext('2d').drawImage(bmp,0,0,cv.width,cv.height);
+  return await new Promise(res=>cv.toBlob(res,'image/jpeg',quality));
+}
+function previewFiles(inp){
+  const p=document.getElementById('preview'); p.innerHTML='';
+  const n=inp.files.length;
+  document.getElementById('uploadMsg').textContent=n?('Vybrané fotky: '+n+'. Klikni na Uložiť fotky.'):'';
+  [...inp.files].slice(0,12).forEach(f=>{const u=URL.createObjectURL(f); p.innerHTML+='<div><img src="'+u+'" alt="" style="width:100%;aspect-ratio:1;object-fit:cover;border-radius:12px"></div>';});
+}
+async function uploadPhotos(){
+  if(!myProfile){ alert('Fotky môže pridať len prihlásený spolužiak.'); return; }
+  const inp=document.getElementById('fileInput'); const files=[...inp.files];
+  const msg=document.getElementById('uploadMsg');
+  if(!files.length){ msg.textContent='Najprv vyber fotky.'; return; }
+  const album=(document.getElementById('albumName').value||'Bez albumu').trim();
+  const popis=(document.getElementById('photoNote').value||'').trim();
+  const autor=((myProfile.meno||'')+' '+(myProfile.priezvisko||'')).trim()||(currentUser?currentUser.email:'');
+  const btn=document.getElementById('uploadBtn'); btn.disabled=true;
+  let ok=0, fail=0, lastErr='';
+  for(let i=0;i<files.length;i++){
+    msg.textContent='Nahrávam '+(i+1)+' z '+files.length+' ...';
+    try{
+      const big=await resizeToBlob(files[i],1600,0.82), small=await resizeToBlob(files[i],400,0.75);
+      const id=(window.crypto&&crypto.randomUUID)?crypto.randomUUID():(Date.now()+'-'+i);
+      const base=currentUser.id+'/'+id;
+      let r=await db.storage.from('fotky').upload(base+'.jpg',big,{contentType:'image/jpeg'}); if(r.error) throw r.error;
+      r=await db.storage.from('fotky').upload(base+'_n.jpg',small,{contentType:'image/jpeg'}); if(r.error) throw r.error;
+      r=await db.from('galeria').insert([{cesta:base+'.jpg',nahlad:base+'_n.jpg',album:album,popis:popis,autor:autor}]); if(r.error) throw r.error;
+      ok++;
+    }catch(e){ fail++; lastErr=(e&&e.message)||String(e); }
+  }
+  btn.disabled=false;
+  msg.textContent='Hotovo: nahratých '+ok+' z '+files.length+(fail?' (nepodarilo sa '+fail+': '+lastErr+')':'')+'.';
+  inp.value=''; document.getElementById('preview').innerHTML='';
+  loadGallery();
 }
 document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeModal();}});
 initSupabase();
