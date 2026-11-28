@@ -124,14 +124,15 @@ body.anon [data-nav]{display:none}
 <section id="tabulka" class="hidden"><div class="card"><h2>Tabuľka spolužiakov</h2><p id="tableNote"></p><input placeholder="Hľadaj meno..." oninput="renderTable(this.value)"><div style="overflow:auto"><table><thead><tr><th>Meno</th><th>Priezvisko</th><th>Vydatá</th><th>Sedenie</th><th>Kontakt</th></tr></thead><tbody id="tbody"></tbody></table></div></div></section>
 <section id="historia" class="hidden"><div class="card"><h2>História</h2><div id="historyList">Načítavam...</div>
 <div id="historyForm" class="hidden"><h3>Pridať minulú akciu (Editor / Admin)</h3><label>Dátum</label><input type="date" id="hDate"><label>Miesto</label><input id="hPlace"><label>Popis</label><textarea id="hDesc"></textarea><button class="btn" onclick="addHistory()">Pridať</button></div></div></section>
-<section id="nahrat" class="hidden"><div class="card"><h2>Nahrať fotky</h2><p>Jednoducho: vyber fotky, napíš názov albumu a stlač Uložiť. Môžeš vybrať aj viac fotiek naraz.</p>
-<label>Názov albumu</label><input id="albumName" value="Stretávka 13.11.2026">
-<label>Poznámka (nepovinné)</label><input id="photoNote" placeholder="Napr. pri večeri">
+<section id="nahrat" class="hidden"><div class="card"><h2>Nahrať fotky</h2><p>Jednoducho: vyber fotky, napíš názov albumu a komentár a stlač Uložiť. Môžeš vybrať aj viac fotiek naraz.</p>
+<label>Názov albumu (napr. Letná brigáda)</label><input id="albumName" list="albumList" placeholder="Napíš názov alebo vyber existujúci"><datalist id="albumList"></datalist>
+<label>Komentár k fotkám (napr. Fotky z letnej brigády 5.6.1978)</label><input id="photoNote" placeholder="Kedy a kde to bolo, kto na fotke je...">
 <label class="btn" style="display:inline-block;text-align:center;margin:10px 0">📷 VYBRAŤ FOTKY<input type="file" id="fileInput" accept="image/*" multiple style="display:none" onchange="previewFiles(this)"></label>
 <div class="grid" id="preview" style="grid-template-columns:repeat(auto-fill,minmax(90px,1fr))"></div>
 <p id="uploadMsg" style="font-size:14px"></p>
 <button class="btn" id="uploadBtn" onclick="uploadPhotos()">Uložiť fotky</button>
-<p style="font-size:13px;color:var(--mut)">Fotky sa pred nahraním zmenšia, aby sa nahrali rýchlo. Vidia ich len prihlásení spolužiaci.</p></div></section>
+<p style="font-size:13px;color:var(--mut)">Fotky sa pred nahraním zmenšia, aby sa nahrali rýchlo. Vidia ich len prihlásení spolužiaci.</p>
+<h3>Moje fotky</h3><p style="font-size:13px;color:var(--mut)">Tu vidíš, čo si už nahral(a). Chybnú fotku môžeš zmazať.</p><div id="moje"></div></div></section>
 <section id="odkazy" class="hidden"><div class="card"><h2>Odkazy</h2><p>Zosnulí (✝) sa automaticky nezobrazujú v príjemcoch.</p>
 <div class="row"><a class="btn2" style="text-decoration:none" href="https://facebook.com" target="_blank" rel="noopener">Facebook</a><a class="btn2" style="text-decoration:none" href="https://instagram.com" target="_blank" rel="noopener">Instagram</a><a class="btn2" style="text-decoration:none" href="https://youtube.com" target="_blank" rel="noopener">YouTube</a><a class="btn2" style="text-decoration:none" href="https://whatsapp.com" target="_blank" rel="noopener">WhatsApp</a></div>
 <h3>Napísať odkaz</h3><div id="recipients" style="max-height:180px;overflow:auto;border:1px solid var(--line);border-radius:12px;padding:10px"></div>
@@ -409,7 +410,7 @@ let GAL=[], GAL_URLS={}, GAL_SHOWN=60;
 function renderPhotos(){ loadGallery(); }
 async function loadGallery(){
   if(!myProfile||!db) return;
-  const r=await db.from('galeria').select('id,cesta,nahlad,album,popis,autor,created_at').order('created_at',{ascending:false}).limit(500);
+  const r=await db.from('galeria').select('id,cesta,nahlad,album,popis,autor,autor_id,created_at').order('created_at',{ascending:false}).limit(500);
   GAL=r.data||[];
   const paths=GAL.slice(0,GAL_SHOWN).map(x=>x.nahlad);
   GAL_URLS={};
@@ -425,18 +426,27 @@ function renderGallery(){
   if(!GAL.length){ g.innerHTML='<p style="color:var(--mut)">Zatiaľ tu nie sú žiadne fotky. Pridaj prvé cez Nahrať fotky.</p>'; l.innerHTML=''; return; }
   const tile=x=>GAL_URLS[x.nahlad]?'<img src="'+GAL_URLS[x.nahlad]+'" loading="lazy" alt="" style="width:100%;aspect-ratio:1;object-fit:cover;border-radius:12px;cursor:pointer" onclick="openPhoto(\''+x.id+'\')">':'';
   l.innerHTML=GAL.slice(0,4).map(tile).join('');
+  renderMine();
   const groups={}; GAL.slice(0,GAL_SHOWN).forEach(x=>{const a=x.album||'Bez albumu'; (groups[a]=groups[a]||[]).push(x);});
   g.innerHTML=Object.keys(groups).map(a=>'<h3>'+esc(a)+'</h3><div class="grid" style="grid-template-columns:repeat(auto-fill,minmax(110px,1fr))">'+groups[a].map(tile).join('')+'</div>').join('')+(GAL.length>GAL_SHOWN?'<div style="margin-top:10px"><button class="btn2" onclick="GAL_SHOWN+=60;loadGallery()">Zobraziť ďalšie</button></div>':'');
 }
-function clearGallery(){ GAL=[]; GAL_URLS={}; const g=document.getElementById('gallery'), l=document.getElementById('lastPhotos'); if(g) g.innerHTML=''; if(l) l.innerHTML=''; }
+function renderMine(){
+  const dl=document.getElementById('albumList'); if(dl){ dl.innerHTML=[...new Set(GAL.map(x=>x.album).filter(Boolean))].map(a=>'<option value="'+esc(a)+'">').join(''); }
+  const m=document.getElementById('moje'); if(!m||!currentUser) return;
+  const mine=GAL.filter(x=>x.autor_id===currentUser.id&&GAL_URLS[x.nahlad]);
+  m.innerHTML=mine.length?'<div class="grid" style="grid-template-columns:repeat(auto-fill,minmax(110px,1fr))">'+mine.map(x=>'<div><img src="'+GAL_URLS[x.nahlad]+'" alt="" style="width:100%;aspect-ratio:1;object-fit:cover;border-radius:12px;cursor:pointer" onclick="openPhoto(\''+x.id+'\')"><div style="font-size:12px">'+esc(x.album||'')+(x.popis?' - '+esc(x.popis):'')+'</div><button class="btn2" style="padding:4px 10px;font-size:12px" onclick="deletePhoto(\''+x.id+'\')">Zmazať</button></div>').join('')+'</div>':'<p style="font-size:13px;color:var(--mut)">Zatiaľ si nenahral(a) žiadne fotky.</p>';
+}
+function clearGallery(){ GAL=[]; GAL_URLS={}; const mm=document.getElementById('moje'); if(mm) mm.innerHTML=''; const g=document.getElementById('gallery'), l=document.getElementById('lastPhotos'); if(g) g.innerHTML=''; if(l) l.innerHTML=''; }
 async function openPhoto(id){
   const x=GAL.find(y=>y.id===id); if(!x) return;
   const s=await db.storage.from('fotky').createSignedUrl(x.cesta,3600);
   const url=s.data&&s.data.signedUrl; if(!url) return;
-  document.getElementById('modalRoot').innerHTML='<div class="modal" onclick="if(event.target===this)closeModal()"><div><button class="x" onclick="closeModal()">×</button><img src="'+url+'" alt="" style="max-width:100%;border-radius:12px"><p style="font-size:13px">'+esc(x.album||'')+(x.popis?' - '+esc(x.popis):'')+'<br>Pridal(a): '+esc(x.autor||'')+' • '+fmtDate((x.created_at||'').slice(0,10))+'</p>'+(myRole==='Admin'?'<button class="btn2" onclick="deletePhoto(\''+x.id+'\')">Zmazať fotku</button>':'')+'</div></div>';
+  let dl=''; if(myRole==='Admin'){ const d=await db.storage.from('fotky').createSignedUrl(x.cesta,3600,{download:true}); if(d.data&&d.data.signedUrl){ dl='<a class="btn" style="text-decoration:none;display:inline-block;margin-right:8px" href="'+d.data.signedUrl+'">Stiahnuť fotku</a>'; } }
+  const canDel=(myRole==='Admin'||(currentUser&&x.autor_id===currentUser.id));
+  document.getElementById('modalRoot').innerHTML='<div class="modal" onclick="if(event.target===this)closeModal()"><div><button class="x" onclick="closeModal()">×</button><img src="'+url+'" alt="" style="max-width:100%;border-radius:12px"><p style="font-size:13px">'+esc(x.album||'')+(x.popis?' - '+esc(x.popis):'')+'<br>Pridal(a): '+esc(x.autor||'')+' • '+fmtDate((x.created_at||'').slice(0,10))+'</p>'+dl+(canDel?'<button class="btn2" onclick="deletePhoto(\''+x.id+'\')">Zmazať fotku</button>':'')+'</div></div>';
 }
 async function deletePhoto(id){
-  const x=GAL.find(y=>y.id===id); if(!x||myRole!=='Admin') return;
+  const x=GAL.find(y=>y.id===id); if(!x||!(myRole==='Admin'||(currentUser&&x.autor_id===currentUser.id))) return;
   if(!confirm('Naozaj zmazať túto fotku?')) return;
   const d=await db.from('galeria').delete().eq('id',id).select('id');
   if(d.error||!d.data||d.data.length!==1){ alert('Fotku sa nepodarilo zmazať.'); return; }
@@ -457,14 +467,15 @@ function previewFiles(inp){
   const p=document.getElementById('preview'); p.innerHTML='';
   const n=inp.files.length;
   document.getElementById('uploadMsg').textContent=n?('Vybrané fotky: '+n+'. Klikni na Uložiť fotky.'):'';
-  [...inp.files].slice(0,12).forEach(f=>{const u=URL.createObjectURL(f); p.innerHTML+='<div><img src="'+u+'" alt="" style="width:100%;aspect-ratio:1;object-fit:cover;border-radius:12px"></div>';});
+  [...inp.files].slice(0,40).forEach(f=>{const u=URL.createObjectURL(f); p.innerHTML+='<div><img src="'+u+'" alt="" style="width:100%;aspect-ratio:1;object-fit:cover;border-radius:12px"></div>';});
 }
 async function uploadPhotos(){
   if(!myProfile){ alert('Fotky môže pridať len prihlásený spolužiak.'); return; }
   const inp=document.getElementById('fileInput'); const files=[...inp.files];
   const msg=document.getElementById('uploadMsg');
   if(!files.length){ msg.textContent='Najprv vyber fotky.'; return; }
-  const album=(document.getElementById('albumName').value||'Bez albumu').trim();
+  const album=(document.getElementById('albumName').value||'').trim();
+  if(!album){ msg.textContent='Napíš názov albumu (napr. Letná brigáda).'; return; }
   const popis=(document.getElementById('photoNote').value||'').trim();
   const autor=((myProfile.meno||'')+' '+(myProfile.priezvisko||'')).trim()||(currentUser?currentUser.email:'');
   const btn=document.getElementById('uploadBtn'); btn.disabled=true;
@@ -472,7 +483,7 @@ async function uploadPhotos(){
   for(let i=0;i<files.length;i++){
     msg.textContent='Nahrávam '+(i+1)+' z '+files.length+' ...';
     try{
-      const big=await resizeToBlob(files[i],1600,0.82), small=await resizeToBlob(files[i],400,0.75);
+      const big=await resizeToBlob(files[i],2400,0.85), small=await resizeToBlob(files[i],400,0.75);
       const id=(window.crypto&&crypto.randomUUID)?crypto.randomUUID():(Date.now()+'-'+i);
       const base=currentUser.id+'/'+id;
       let r=await db.storage.from('fotky').upload(base+'.jpg',big,{contentType:'image/jpeg'}); if(r.error) throw r.error;
@@ -483,7 +494,7 @@ async function uploadPhotos(){
   }
   btn.disabled=false;
   msg.textContent='Hotovo: nahratých '+ok+' z '+files.length+(fail?' (nepodarilo sa '+fail+': '+lastErr+')':'')+'.';
-  inp.value=''; document.getElementById('preview').innerHTML='';
+  inp.value=''; document.getElementById('preview').innerHTML=''; document.getElementById('photoNote').value='';
   loadGallery();
 }
 document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeModal();}});
